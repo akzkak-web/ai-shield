@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Shield - AI Security Scanner</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface2: #334155;
+            --border: #475569;
+            --text: #f1f5f9;
+            --text2: #94a3b8;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --critical: #dc2626;
+            --high: #ea580c;
+            --medium: #d97706;
+            --low: #65a30d;
+            --info: #2563eb;
+            --success: #22c55e;
+            --radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        /* Header */
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+        }
+        .logo-text { font-size: 20px; font-weight: 700; }
+        .logo-sub { font-size: 12px; color: var(--text2); }
+        .header-actions { display: flex; gap: 8px; }
+        .lang-btn {
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text2);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all .2s;
+        }
+        .lang-btn:hover, .lang-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        /* Nav */
+        .nav {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            display: flex;
+            gap: 4px;
+        }
+        .nav-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            color: var(--text2);
+            border-bottom: 2px solid transparent;
+            transition: all .2s;
+            font-size: 14px;
+        }
+        .nav-item:hover { color: var(--text); }
+        .nav-item.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        /* Main */
+        .main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+        .page { display: none; }
+        .page.active { display: block; }
+        /* Cards */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        /* Scan Form */
+        .form-group { margin-bottom: 20px; }
+        .form-label {
+            display: block;
+            font-size: 13px;
+            color: var(--text2);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 14px;
+            outline: none;
+            transition: border-color .2s;
+        }
+        .form-input:focus { border-color: var(--primary); }
+        .form-input::placeholder { color: var(--text2); }
+        /* Radio group */
+        .radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .radio-item {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all .2s;
+        }
+        .radio-item:hover { border-color: var(--primary); }
+        .radio-item.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        /* Check items */
+        .check-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 10px;
+        }
+        .check-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .check-item:hover { border-color: var(--primary); background: rgba(59,130,246,0.05); }
+        .check-item.selected { border-color: var(--primary); background: rgba(59,130,246,0.1); }
+        .check-item input { margin-top: 2px; accent-color: var(--primary); }
+        .check-name { font-size: 13px; font-weight: 500; }
+        .check-desc { font-size: 11px; color: var(--text2); margin-top: 2px; }
+        /* Button */
+        .btn {
+            padding: 10px 24px;
+            border-radius: 8px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-outline {
+            background: transparent;
+            color: var(--text2);
+            border: 1px solid var(--border);
+        }
+        .btn-outline:hover { border-color: var(--text); color: var(--text); }
+        /* Results */
+        .grade-circle {
+            width: 100px; height: 100px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 48px; font-weight: 800;
+            margin: 0 auto 16px;
+        }
+        .grade-A { background: rgba(34,197,94,0.15); color: var(--success); border: 3px solid var(--success); }
+        .grade-B { background: rgba(101,163,13,0.15); color: var(--low); border: 3px solid var(--low); }
+        .grade-C { background: rgba(217,119,6,0.15); color: var(--medium); border: 3px solid var(--medium); }
+        .grade-D { background: rgba(234,88,12,0.15); color: var(--high); border: 3px solid var(--high); }
+        .grade-F { background: rgba(220,38,38,0.15); color: var(--critical); border: 3px solid var(--critical); }
+        .stats-row {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 12px 20px;
+            border-radius: 8px;
+            background: var(--bg);
+            min-width: 100px;
+        }
+        .stat-num { font-size: 24px; font-weight: 700; }
+        .stat-label { font-size: 11px; color: var(--text2); margin-top: 4px; }
+        .stat-critical .stat-num { color: var(--critical); }
+        .stat-high .stat-num { color: var(--high); }
+        .stat-medium .stat-num { color: var(--medium); }
+        .stat-low .stat-num { color: var(--low); }
+        /* Finding card */
+        .finding {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .finding-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background .2s;
+        }
+        .finding-header:hover { background: var(--surface2); }
+        .severity-badge {
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .sev-critical { background: rgba(220,38,38,0.2); color: var(--critical); }
+        .sev-high { background: rgba(234,88,12,0.2); color: var(--high); }
+        .sev-medium { background: rgba(217,119,6,0.2); color: var(--medium); }
+        .sev-low { background: rgba(101,163,13,0.2); color: var(--low); }
+        .sev-info { background: rgba(37,99,235,0.2); color: var(--info); }
+        .finding-title { flex: 1; font-size: 14px; font-weight: 500; }
+        .finding-body {
+            display: none;
+            padding: 0 16px 16px;
+            font-size: 13px;
+        }
+        .finding-body.open { display: block; }
+        .finding-section { margin-top: 10px; }
+        .finding-section-title {
+            font-size: 11px;
+            color: var(--text2);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+        .finding-section-content {
+            background: var(--bg);
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            line-height: 1.5;
+        }
+        /* History */
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .history-item:hover { border-color: var(--primary); background: rgba(59,130,246,0.05); }
+        .history-grade {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 18px;
+        }
+        .history-info { flex: 1; }
+        .history-target { font-weight: 500; font-size: 14px; }
+        .history-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+        /* Progress */
+        .progress-bar {
+            height: 4px;
+            background: var(--surface2);
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 2px;
+            transition: width .3s;
+            animation: progress-pulse 1.5s infinite;
+        }
+        @keyframes progress-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .progress-text { font-size: 13px; color: var(--text2); }
+        /* Empty state */
+        .empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text2);
+        }
+        .empty-icon { font-size: 48px; margin-bottom: 16px; }
+        .empty-text { font-size: 14px; }
+        /* Port table */
+        .port-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .port-table th {
+            text-align: left;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text2);
+            font-weight: 500;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+        .port-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(71,85,105,0.3);
+        }
+        .status-open { color: var(--success); }
+        .status-closed { color: var(--text2); }
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main { padding: 16px; }
+            .check-grid { grid-template-columns: 1fr; }
+            .stats-row { gap: 8px; }
+            .stat-item { min-width: 70px; padding: 8px 12px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">🛡️</div>
+            <div>
+                <div class="logo-text">AI Shield</div>
+                <div class="logo-sub" data-i18n="app_desc">本地 AI 安全扫描工具</div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="lang-btn active" onclick="setLang('zh')">中文</button>
+            <button class="lang-btn" onclick="setLang('en')">EN</button>
+        </div>
+    </div>
+
+    <!-- Nav -->
+    <div class="nav">
+        <div class="nav-item active" data-page="scan" onclick="showPage('scan')" data-i18n="new_scan">新建扫描</div>
+        <div class="nav-item" data-page="results" onclick="showPage('results')" data-i18n="findings">发现问题</div>
+        <div class="nav-item" data-page="history" onclick="showPage('history')" data-i18n="history">历史扫描</div>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+        <!-- Scan Page -->
+        <div class="page active" id="page-scan">
+            <div class="card">
+                <div class="card-title">🎯 <span data-i18n="target">目标地址</span></div>
+                <div class="form-group">
+                    <input type="text" class="form-input" id="scan-target"
+                           data-i18n-placeholder="target_placeholder"
+                           placeholder="输入 IP 或域名（如 127.0.0.1 或 192.168.1.0/24）">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🔌 <span data-i18n="port_range">端口范围</span></div>
+                <div class="radio-group" id="port-options">
+                    <div class="radio-item selected" data-value="default" data-i18n="default_ports">默认 AI 端口</div>
+                    <div class="radio-item" data-value="all" data-i18n="all_ports">全端口（1-65535）</div>
+                    <div class="radio-item" data-value="custom" data-i18n="custom_ports">自定义端口</div>
+                </div>
+                <div id="custom-ports-input" style="display:none; margin-top:12px;">
+                    <input type="text" class="form-input" id="custom-ports" placeholder="8000,8080,11434">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🔍 <span data-i18n="check_items">检查项</span></div>
+                <div class="check-grid" id="check-grid">
+                    <!-- Filled by JS -->
+                </div>
+            </div>
+
+            <div style="text-align:center; margin: 24px 0;">
+                <button class="btn btn-primary" id="btn-scan" onclick="startScan()" data-i18n="start_scan">开始扫描</button>
+            </div>
+
+            <!-- Progress -->
+            <div id="scan-progress" style="display:none;">
+                <div class="card">
+                    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+                    <div class="progress-text" id="progress-text"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Page -->
+        <div class="page" id="page-results">
+            <div id="results-content">
+                <div class="empty">
+                    <div class="empty-icon">🔍</div>
+                    <div class="empty-text" data-i18n="no_issues">运行扫描以查看结果</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Page -->
+        <div class="page" id="page-history">
+            <div id="history-content">
+                <div class="empty">
+                    <div class="empty-icon">📋</div>
+                    <div class="empty-text">No scan history yet</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ============================================================
+    // State
+    // ============================================================
+    let currentLang = 'zh';
+    let currentResult = null;
+    let i18n = {};
+    const CHECKS = [
+        { id: 'network_exposure', icon: '🌐' },
+        { id: 'auth_missing', icon: '🔓' },
+        { id: 'cve_check', icon: '🐛' },
+        { id: 'prompt_injection', icon: '💉' },
+        { id: 'data_leak', icon: '💧' },
+        { id: 'file_access', icon: '📁' },
+        { id: 'resource_abuse', icon: '⚡' },
+        { id: 'cors_check', icon: '🔗' },
+        { id: 'model_access', icon: '🤖' },
+    ];
+
+    // ============================================================
+    // i18n
+    // ============================================================
+    async function loadI18n(lang) {
+        try {
+            const resp = await fetch(`/api/i18n/${lang}`);
+            i18n = await resp.json();
+        } catch {
+            // Fallback inline
+            i18n = lang === 'zh' ? {
+                app_desc: '本地 AI 安全扫描工具', new_scan: '新建扫描', findings: '发现问题',
+                history: '历史扫描', target: '目标地址',
+                target_placeholder: '输入 IP 或域名（如 127.0.0.1）',
+                port_range: '端口范围', default_ports: '默认 AI 端口',
+                all_ports: '全端口（1-65535）', custom_ports: '自定义端口',
+                check_items: '检查项', start_scan: '开始扫描', scanning: '扫描中...',
+                no_issues: '未发现安全问题', critical: '严重', high: '高危',
+                medium: '中危', low: '低危', info: '信息',
+                recommendation: '修复建议', evidence: '证据',
+                grade: '安全评级', scan_time: '扫描耗时',
+                open_ports: '开放端口', ai_services: 'AI 服务',
+                risk_score: '风险评分', details: '详情',
+                network_exposure: '网络暴露', network_exposure_desc: '检查 API 是否绑定 0.0.0.0，外部是否可达',
+                auth_missing: '认证缺失', auth_missing_desc: '检查是否缺少 API Key 或身份认证',
+                cve_check: '已知漏洞', cve_check_desc: '匹配已知 CVE（Ollama/vLLM 等）',
+                prompt_injection: 'Prompt 注入', prompt_injection_desc: '测试系统提示词是否可被提取',
+                data_leak: '数据泄露', data_leak_desc: '测试模型是否泄露训练数据',
+                file_access: '文件读取', file_access_desc: '测试是否可通过 API 读取本地文件',
+                resource_abuse: '资源滥用', resource_abuse_desc: '检查是否缺少速率限制',
+                cors_check: 'CORS 配置', cors_check_desc: '检查跨域策略是否过于宽松',
+                model_access: '模型访问', model_access_desc: '检查未授权用户是否可列出/下载模型',
+            } : {
+                app_desc: 'Local AI Security Scanner', new_scan: 'New Scan', findings: 'Findings',
+                history: 'History', target: 'Target',
+                target_placeholder: 'Enter IP or domain (e.g. 127.0.0.1)',
+                port_range: 'Port Range', default_ports: 'Default AI Ports',
+                all_ports: 'All Ports (1-65535)', custom_ports: 'Custom Ports',
+                check_items: 'Check Items', start_scan: 'Start Scan', scanning: 'Scanning...',
+                no_issues: 'No security issues found', critical: 'Critical', high: 'High',
+                medium: 'Medium', low: 'Low', info: 'Info',
+                recommendation: 'Recommendation', evidence: 'Evidence',
+                grade: 'Security Grade', scan_time: 'Scan Time',
+                open_ports: 'Open Ports', ai_services: 'AI Services',
+                risk_score: 'Risk Score', details: 'Details',
+                network_exposure: 'Network Exposure', network_exposure_desc: 'Check if API binds to 0.0.0.0',
+                auth_missing: 'Missing Auth', auth_missing_desc: 'Check if API Key or auth is missing',
+                cve_check: 'Known CVEs', cve_check_desc: 'Match known CVEs',
+                prompt_injection: 'Prompt Injection', prompt_injection_desc: 'Test system prompt extraction',
+                data_leak: 'Data Leakage', data_leak_desc: 'Test training data leakage',
+                file_access: 'File Read', file_access_desc: 'Test local file read via API',
+                resource_abuse: 'Resource Abuse', resource_abuse_desc: 'Check rate limiting',
+                cors_check: 'CORS Config', cors_check_desc: 'Check CORS policy',
+                model_access: 'Model Access', model_access_desc: 'Check unauthorized model listing',
+            };
+        }
+        applyI18n();
+    }
+
+    function applyI18n() {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (i18n[key]) el.textContent = i18n[key];
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            if (i18n[key]) el.placeholder = i18n[key];
+        });
+        // Rebuild check grid
+        buildCheckGrid();
+    }
+
+    function setLang(lang) {
+        currentLang = lang;
+        document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`.lang-btn[onclick="setLang('${lang}')"]`).classList.add('active');
+        document.documentElement.lang = lang;
+        loadI18n(lang);
+    }
+
+    // ============================================================
+    // Check Grid
+    // ============================================================
+    function buildCheckGrid() {
+        const grid = document.getElementById('check-grid');
+        grid.innerHTML = CHECKS.map(c => `
+            <div class="check-item selected" data-check="${c.id}" onclick="toggleCheck(this)">
+                <input type="checkbox" checked>
+                <div>
+                    <div class="check-name">${c.icon} ${i18n[c.id] || c.id}</div>
+                    <div class="check-desc">${i18n[c.id + '_desc'] || ''}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function toggleCheck(el) {
+        el.classList.toggle('selected');
+        el.querySelector('input').checked = el.classList.contains('selected');
+    }
+
+    // ============================================================
+    // Port Options
+    // ============================================================
+    document.querySelectorAll('#port-options .radio-item').forEach(item => {
+        item.addEventListener('click', () => {
+            document.querySelectorAll('#port-options .radio-item').forEach(i => i.classList.remove('selected'));
+            item.classList.add('selected');
+            document.getElementById('custom-ports-input').style.display =
+                item.dataset.value === 'custom' ? 'block' : 'none';
+        });
+    });
+
+    // ============================================================
+    // Navigation
+    // ============================================================
+    function showPage(page) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById(`page-${page}`).classList.add('active');
+        document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
+        if (page === 'history') loadHistory();
+    }
+
+    // ============================================================
+    // Scan
+    // ============================================================
+    async function startScan() {
+        const target = document.getElementById('scan-target').value.trim();
+        if (!target) { alert('Please enter a target'); return; }
+
+        // Get selected ports
+        const portMode = document.querySelector('#port-options .radio-item.selected').dataset.value;
+        let ports = null;
+        if (portMode === 'custom') {
+            const custom = document.getElementById('custom-ports').value;
+            ports = custom.split(',').map(p => parseInt(p.trim())).filter(p => p > 0);
+        } else if (portMode === 'all') {
+            ports = Array.from({length: 65535}, (_, i) => i + 1);
+        }
+
+        // Get selected checks
+        const checks = [];
+        document.querySelectorAll('.check-item.selected').forEach(el => {
+            checks.push(el.dataset.check);
+        });
+
+        // UI
+        const btn = document.getElementById('btn-scan');
+        btn.disabled = true;
+        btn.textContent = i18n.scanning || 'Scanning...';
+        document.getElementById('scan-progress').style.display = 'block';
+        document.getElementById('progress-fill').style.width = '30%';
+        document.getElementById('progress-text').textContent = i18n.scanning || 'Scanning...';
+
+        try {
+            const resp = await fetch('/api/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ target, ports, checks: checks.length ? checks : null, lang: currentLang }),
+            });
+
+            document.getElementById('progress-fill').style.width = '100%';
+
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            currentResult = await resp.json();
+            renderResults(currentResult);
+            showPage('results');
+        } catch (err) {
+            alert(`Scan failed: ${err.message}`);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = i18n.start_scan || 'Start Scan';
+            document.getElementById('scan-progress').style.display = 'none';
+        }
+    }
+
+    // ============================================================
+    // Render Results
+    // ============================================================
+    function renderResults(result) {
+        const container = document.getElementById('results-content');
+        const s = result.summary;
+        const pd = result.port_data;
+
+        let html = `
+        <!-- Grade -->
+        <div class="card" style="text-align:center;">
+            <div class="grade-circle grade-${result.grade}">${result.grade}</div>
+            <div style="font-size:14px;color:var(--text2);margin-bottom:16px;">
+                ${i18n.risk_score || 'Risk Score'}: ${result.risk_score}/100 |
+                ${i18n.scan_time || 'Scan Time'}: ${result.duration}s
+            </div>
+            <div class="stats-row">
+                <div class="stat-item stat-critical"><div class="stat-num">${s.critical}</div><div class="stat-label">${i18n.critical || 'Critical'}</div></div>
+                <div class="stat-item stat-high"><div class="stat-num">${s.high}</div><div class="stat-label">${i18n.high || 'High'}</div></div>
+                <div class="stat-item stat-medium"><div class="stat-num">${s.medium}</div><div class="stat-label">${i18n.medium || 'Medium'}</div></div>
+                <div class="stat-item stat-low"><div class="stat-num">${s.low}</div><div class="stat-label">${i18n.low || 'Low'}</div></div>
+            </div>
+        </div>
+
+        <!-- Port Summary -->
+        <div class="card">
+            <div class="card-title">🔌 ${i18n.open_ports || 'Open Ports'} (${pd.open_ports?.length || 0})</div>
+            <table class="port-table">
+                <thead><tr>
+                    <th>${i18n.port || 'Port'}</th>
+                    <th>${i18n.service || 'Service'}</th>
+                    <th>${i18n.version || 'Version'}</th>
+                    <th>${i18n.status || 'Status'}</th>
+                </tr></thead>
+                <tbody>
+                    ${(pd.services || []).map(svc => `
+                        <tr>
+                            <td>${svc.port}</td>
+                            <td>${svc.service}${svc.detected ? ' ✅' : ''}</td>
+                            <td>${svc.version || '-'}</td>
+                            <td class="status-open">${i18n.open || 'Open'}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Findings -->
+        <div class="card">
+            <div class="card-title">🐛 ${i18n.findings || 'Findings'} (${result.findings.length})</div>
+            ${result.findings.length === 0 ? `<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">${i18n.no_issues || 'No issues found'}</div></div>` : ''}
+            ${result.findings.map((f, i) => `
+                <div class="finding">
+                    <div class="finding-header" onclick="toggleFinding(${i})">
+                        <span class="severity-badge sev-${f.severity}">${i18n[f.severity] || f.severity}</span>
+                        <span class="finding-title">${currentLang === 'zh' ? f.title_zh : f.title_en}</span>
+                        <span style="color:var(--text2);font-size:12px;">${f.service}:${f.port}</span>
+                    </div>
+                    <div class="finding-body" id="finding-${i}">
+                        <div class="finding-section">
+                            <div class="finding-section-title">${i18n.evidence || 'Evidence'}</div>
+                            <div class="finding-section-content">${f.evidence}</div>
+                        </div>
+                        <div class="finding-section">
+                            <div class="finding-section-title">${i18n.recommendation || 'Recommendation'}</div>
+                            <div class="finding-section-content">${currentLang === 'zh' ? f.recommendation_zh : f.recommendation_en}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        `;
+
+        container.innerHTML = html;
+    }
+
+    function toggleFinding(idx) {
+        const el = document.getElementById(`finding-${idx}`);
+        el.classList.toggle('open');
+    }
+
+    // ============================================================
+    // History
+    // ============================================================
+    async function loadHistory() {
+        try {
+            const resp = await fetch('/api/history');
+            const history = await resp.json();
+            const container = document.getElementById('history-content');
+
+            if (!history.length) {
+                container.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">No scan history</div></div>`;
+                return;
+            }
+
+            container.innerHTML = history.map(scan => `
+                <div class="history-item" onclick='viewScan(${JSON.stringify(scan.id)})'>
+                    <div class="history-grade grade-${scan.grade}">${scan.grade}</div>
+                    <div class="history-info">
+                        <div class="history-target">${scan.target}</div>
+                        <div class="history-meta">
+                            ${scan.start_time} | ${scan.duration}s |
+                            🔴${scan.summary.critical} 🟠${scan.summary.high} 🟡${scan.summary.medium} 🟢${scan.summary.low}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (err) {
+            console.error('Failed to load history:', err);
+        }
+    }
+
+    async function viewScan(scanId) {
+        try {
+            const resp = await fetch(`/api/scan/${scanId}`);
+            if (resp.ok) {
+                currentResult = await resp.json();
+                renderResults(currentResult);
+                showPage('results');
+            }
+        } catch (err) {
+            console.error('Failed to load scan:', err);
+        }
+    }
+
+    // ============================================================
+    // Init
+    // ============================================================
+    loadI18n('zh');
+    </script>
+</body>
+</html>
