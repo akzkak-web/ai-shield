@@ -1,11 +1,10 @@
-from typing import List
 """
 AI Shield - Security Check Modules
 Each check returns a list of Finding dicts.
 """
 import asyncio
 import httpx
-from typing import Optional
+from typing import Optional, List
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
 
@@ -22,6 +21,7 @@ class Finding:
     evidence: str = ""
     recommendation_zh: str = ""
     recommendation_en: str = ""
+    remediation: str = ""  # Shell command to fix
     port: int = 0
     service: str = ""
 
@@ -111,6 +111,7 @@ async def check_auth_missing(host: str, port: int, service: str) -> List[Finding
             evidence=f"Accessible endpoints: {accessible_endpoints}",
             recommendation_zh="启用 API Key 认证。Ollama: 设置 OLLAMA_API_KEY 环境变量。vLLM: 使用 --api-key 参数。",
             recommendation_en="Enable API Key authentication. Ollama: set OLLAMA_API_KEY env var. vLLM: use --api-key flag.",
+            remediation=f"# Enable authentication for {service}\nif [ \"{service}\" = \"Ollama\" ]; then\n  echo 'OLLAMA_API_KEY=your-secret-key-here' >> /etc/environment\n  systemctl restart ollama\nelif [ \"{service}\" = \"vLLM\" ]; then\n  # Restart vLLM with --api-key flag\n  vllm serve your-model --api-key your-secret-key-here\nfi",
             port=port,
             service=service,
         ))

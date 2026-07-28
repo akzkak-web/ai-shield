@@ -1,4 +1,3 @@
-from typing import List
 """
 AI Shield - Main Scanner Engine
 Orchestrates service discovery and security checks.
@@ -7,9 +6,10 @@ import asyncio
 import time
 import uuid
 import json
+import ipaddress
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Dict
 
 from services.detector import scan_ports, identify_service
 from core.config import DEFAULT_PORTS
@@ -94,6 +94,21 @@ class Scanner:
         self.history_file.parent.mkdir(parents=True, exist_ok=True)
         self.history_file.write_text(json.dumps(self.history, ensure_ascii=False, indent=2))
 
+    @staticmethod
+    def expand_target(target: str) -> List[str]:
+        """Expand target to list of IPs. Supports CIDR notation."""
+        try:
+            # Check if it's a CIDR network
+            if "/" in target:
+                network = ipaddress.ip_network(target, strict=False)
+                return [str(ip) for ip in network.hosts()]
+            else:
+                # Single IP or hostname
+                return [target]
+        except ValueError:
+            # Not a valid IP/CIDR, treat as hostname
+            return [target]
+
     async def run_scan(
         self,
         target: str,
@@ -101,7 +116,7 @@ class Scanner:
         checks: Optional[List[str]] = None,
         progress_callback=None,
     ) -> dict:
-        """Run a full security scan."""
+        """Run a full security scan on a single target."""
         result = ScanResult(target)
         start = time.time()
 
@@ -159,6 +174,29 @@ class Scanner:
         self._save_history()
 
         return result_dict
+
+    async def run_subnet_scan(
+        self,
+        target: str,
+        ports: Optional[List[int]] = None,
+        checks: Optional[List[str]] = None,
+        progress_callback=None,
+    ) -> List[dict]:
+        """Run scan on multiple targets (subnet/CIDR)."""
+        targets = self.expand_target(target)
+        results = []
+
+        for i, ip in enumerate(targets):
+            if progress_callback:
+                await progress_callback("subnet", f"Scanning {ip} ({i+1}/{len(targets)})...")
+
+            try:
+                result = await self.run_scan(ip, ports, checks)
+                results.append(result)
+            except Exception as e:
+                results.append({"target": ip, "error": str(e)})
+
+        return results
 
     def get_history(self) -> List[dict]:
         return self.history
