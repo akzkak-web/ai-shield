@@ -39,7 +39,7 @@ AI Shield is a one-click security scanner designed to audit locally deployed AI 
 #### One-Click Install
 
 ```bash
-curl -sL https://raw.githubusercontent.com/USER/ai-shield/main/install.sh | bash
+curl -sL https://raw.githubusercontent.com/akzkak-web/ai-shield/main/install.sh | bash
 ```
 
 #### Web UI
@@ -65,7 +65,7 @@ ai-shield scan 10.0.0.1 -o report.json
 ### Development
 
 ```bash
-git clone https://github.com/USER/ai-shield.git
+git clone https://github.com/akzkak-web/ai-shield.git
 cd ai-shield
 python3 -m venv venv
 source venv/bin/activate
@@ -122,7 +122,7 @@ AI Shield 是一款一键式安全扫描工具，专门用于检查本地部署�
 #### 一键安装
 
 ```bash
-curl -sL https://raw.githubusercontent.com/USER/ai-shield/main/install.sh | bash
+curl -sL https://raw.githubusercontent.com/akzkak-web/ai-shield/main/install.sh | bash
 ```
 
 #### Web 界面
@@ -148,7 +148,7 @@ ai-shield scan 10.0.0.1 -o report.json
 ### 开发模式
 
 ```bash
-git clone https://github.com/USER/ai-shield.git
+git clone https://github.com/akzkak-web/ai-shield.git
 cd ai-shield
 python3 -m venv venv
 source venv/bin/activate
