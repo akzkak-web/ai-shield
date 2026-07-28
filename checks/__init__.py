@@ -1,3 +1,4 @@
+from typing import List
 """
 AI Shield - Security Check Modules
 Each check returns a list of Finding dicts.
@@ -31,7 +32,7 @@ class Finding:
 # ============================================================
 # Check: Network Exposure
 # ============================================================
-async def check_network_exposure(host: str, port: int, service: str) -> list[Finding]:
+async def check_network_exposure(host: str, port: int, service: str) -> List[Finding]:
     """Check if AI service is exposed to the internet."""
     findings = []
 
@@ -67,7 +68,7 @@ async def check_network_exposure(host: str, port: int, service: str) -> list[Fin
 # ============================================================
 # Check: Missing Authentication
 # ============================================================
-async def check_auth_missing(host: str, port: int, service: str) -> list[Finding]:
+async def check_auth_missing(host: str, port: int, service: str) -> List[Finding]:
     """Check if the AI service lacks authentication."""
     findings = []
 
@@ -120,7 +121,7 @@ async def check_auth_missing(host: str, port: int, service: str) -> list[Finding
 # ============================================================
 # Check: CORS Configuration
 # ============================================================
-async def check_cors(host: str, port: int, service: str) -> list[Finding]:
+async def check_cors(host: str, port: int, service: str) -> List[Finding]:
     """Check CORS configuration."""
     findings = []
 
@@ -160,7 +161,7 @@ async def check_cors(host: str, port: int, service: str) -> list[Finding]:
 # ============================================================
 # Check: Model Access (unauthorized)
 # ============================================================
-async def check_model_access(host: str, port: int, service: str) -> list[Finding]:
+async def check_model_access(host: str, port: int, service: str) -> List[Finding]:
     """Check if models can be listed without authentication."""
     findings = []
 
@@ -205,7 +206,7 @@ async def check_model_access(host: str, port: int, service: str) -> list[Finding
 # ============================================================
 # Check: Prompt Injection / System Prompt Extraction
 # ============================================================
-async def check_prompt_injection(host: str, port: int, service: str) -> list[Finding]:
+async def check_prompt_injection(host: str, port: int, service: str) -> List[Finding]:
     """Test if system prompt can be extracted via injection."""
     findings = []
 
@@ -278,7 +279,7 @@ async def check_prompt_injection(host: str, port: int, service: str) -> list[Fin
 # ============================================================
 # Check: Data Leakage
 # ============================================================
-async def check_data_leak(host: str, port: int, service: str) -> list[Finding]:
+async def check_data_leak(host: str, port: int, service: str) -> List[Finding]:
     """Test if model leaks sensitive training data."""
     findings = []
 
@@ -339,7 +340,7 @@ async def check_data_leak(host: str, port: int, service: str) -> list[Finding]:
 # ============================================================
 # Check: File Read
 # ============================================================
-async def check_file_access(host: str, port: int, service: str) -> list[Finding]:
+async def check_file_access(host: str, port: int, service: str) -> List[Finding]:
     """Test if local files can be read via API."""
     findings = []
 
@@ -376,7 +377,7 @@ async def check_file_access(host: str, port: int, service: str) -> list[Finding]
 # ============================================================
 # Check: Resource Abuse (rate limiting)
 # ============================================================
-async def check_resource_abuse(host: str, port: int, service: str) -> list[Finding]:
+async def check_resource_abuse(host: str, port: int, service: str) -> List[Finding]:
     """Check if rate limiting is in place."""
     findings = []
 
@@ -413,7 +414,7 @@ async def check_resource_abuse(host: str, port: int, service: str) -> list[Findi
 # ============================================================
 # Check: Known CVEs
 # ============================================================
-async def check_cve(host: str, port: int, service: str, version: Optional[str]) -> list[Finding]:
+async def check_cve(host: str, port: int, service: str, version: Optional[str]) -> List[Finding]:
     """Check for known CVEs based on service and version."""
     findings = []
 

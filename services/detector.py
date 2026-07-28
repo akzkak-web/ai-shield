@@ -5,7 +5,7 @@ Identifies AI services by port/banner/response fingerprinting.
 import socket
 import asyncio
 import httpx
-from typing import Optional
+from typing import Optional, List, Dict
 
 # Service fingerprints: (port, path, expected_response_pattern, service_name)
 SERVICE_FINGERPRINTS = {
@@ -135,7 +135,7 @@ async def identify_service(host: str, port: int) -> Optional[dict]:
     return result if result["detected"] else None
 
 
-async def scan_ports(host: str, ports: list[int], timeout: float = 2.0) -> dict:
+async def scan_ports(host: str, ports: List[int], timeout: float = 2.0) -> Dict:
     """Scan multiple ports and return open ports with service info."""
     tasks = [check_port(host, p, timeout) for p in ports]
     results = await asyncio.gather(*tasks)

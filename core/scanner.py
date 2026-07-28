@@ -1,3 +1,4 @@
+from typing import List
 """
 AI Shield - Main Scanner Engine
 Orchestrates service discovery and security checks.
@@ -26,7 +27,7 @@ class ScanResult:
         self.end_time = None
         self.duration = 0
         self.port_data = {}
-        self.findings: list[Finding] = []
+        self.findings: List[Finding] = []
         self.grade = "N/A"
         self.risk_score = 0
 
@@ -76,7 +77,7 @@ class Scanner:
     """Main scanner engine."""
 
     def __init__(self):
-        self.history: list[dict] = []
+        self.history: List[dict] = []
         self.history_file = Path(__file__).parent.parent / "data" / "scan_history.json"
         self._load_history()
 
@@ -96,8 +97,8 @@ class Scanner:
     async def run_scan(
         self,
         target: str,
-        ports: Optional[list[int]] = None,
-        checks: Optional[list[str]] = None,
+        ports: Optional[List[int]] = None,
+        checks: Optional[List[str]] = None,
         progress_callback=None,
     ) -> dict:
         """Run a full security scan."""
@@ -159,7 +160,7 @@ class Scanner:
 
         return result_dict
 
-    def get_history(self) -> list[dict]:
+    def get_history(self) -> List[dict]:
         return self.history
 
     def get_scan(self, scan_id: str) -> Optional[dict]:

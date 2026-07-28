@@ -1,3 +1,4 @@
+from typing import List
 """
 AI Shield - Web Server (FastAPI)
 """
@@ -37,8 +38,8 @@ app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 # ============================================================
 class ScanRequest(BaseModel):
     target: str
-    ports: Optional[list[int]] = None
-    checks: Optional[list[str]] = None
+    ports: Optional[List[int]] = None
+    checks: Optional[List[str]] = None
     lang: str = "zh"
 
 
