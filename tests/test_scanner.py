@@ -66,3 +66,59 @@ def test_run_scan_records_check_error(monkeypatch, tmp_path):
     assert result["check_results"]["ok_check"] == "fail"
     assert len(result["findings"]) == 1
     assert result["grade"] == "F"
+
+
+def test_run_scan_no_ai_services_grade_na(monkeypatch, tmp_path):
+    async def fake_scan_ports(host, ports, timeout=2.0):
+        return {
+            "host": host,
+            "total_scanned": len(ports),
+            "open_ports": [5000],
+            "services": [{"port": 5000, "service": "Unknown", "version": None, "detected": False}],
+        }
+
+    monkeypatch.setattr(scanner_mod, "scan_ports", fake_scan_ports)
+    sc = Scanner()
+    sc.history_file = tmp_path / "h.json"
+    result = asyncio.run(sc.run_scan("127.0.0.1", [5000]))
+    assert result["grade"] == "N/A"
+    assert result["coverage_status"] == "none"
+    assert result["notes"]
+
+
+def test_run_scan_pins_resolved_ip(monkeypatch, tmp_path):
+    import socket
+
+    captured = {}
+
+    def fake_getaddrinfo(host, port, type=0, *args, **kwargs):
+        if host == "evil.local":
+            return [(socket.AF_INET, socket.SOCK_STREAM, 0, "", ("127.0.0.1", 0))]
+        raise socket.gaierror("no resolution")
+
+    monkeypatch.setattr(socket, "getaddrinfo", fake_getaddrinfo)
+
+    async def fake_scan_ports(host, ports, timeout=2.0):
+        captured["host"] = host
+        return {"host": host, "total_scanned": len(ports), "open_ports": [], "services": []}
+
+    monkeypatch.setattr(scanner_mod, "scan_ports", fake_scan_ports)
+    sc = Scanner()
+    sc.history_file = tmp_path / "h.json"
+    asyncio.run(sc.run_scan("evil.local", [11434]))
+    assert captured["host"] == "127.0.0.1"
+
+
+def test_subnet_too_large_rejected(monkeypatch):
+    monkeypatch.setattr(scanner_mod.settings, "max_subnet_hosts", 10)
+    with pytest.raises(ValueError):
+        asyncio.run(Scanner().run_subnet_scan("10.0.0.0/8", allow_private=True))
+
+
+def test_worst_status_aggregation():
+    from core.scanner import _worst_status
+
+    assert _worst_status("pass", "error") == "error"
+    assert _worst_status("error", "pass") == "error"
+    assert _worst_status("fail", "unknown") == "unknown"
+    assert _worst_status(None, "pass") == "pass"

@@ -14,6 +14,7 @@ of inventing a conclusion.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
@@ -69,9 +70,13 @@ def load_advisories(path: Optional[Path] = None) -> List[Advisory]:
 
 
 def _product_matches(advisory_product: str, service: str) -> bool:
-    a = advisory_product.lower()
+    a = advisory_product.lower().strip()
     s = (service or "").lower()
-    return a in s or s in a
+    if not a:
+        return False
+    # Whole-token match so "Ollama" does not match an unrelated name that
+    # merely contains the substring.
+    return bool(re.search(rf"(?<![a-z0-9]){re.escape(a)}(?![a-z0-9])", s))
 
 
 def match_advisories(

@@ -63,3 +63,53 @@ def test_rate_limit(monkeypatch):
     second = client.post("/api/scan", json={"target": "127.0.0.1"})
     assert first.status_code == 200
     assert second.status_code == 429
+
+
+def test_auth_wrong_token_rejected(monkeypatch):
+    monkeypatch.setattr(ws.settings, "access_token", "secret-token")
+    client = TestClient(app)
+    resp = client.post(
+        "/api/scan",
+        json={"target": "127.0.0.1"},
+        headers={"Authorization": "Bearer wrong-token"},
+    )
+    assert resp.status_code == 401
+
+
+def test_assert_safe_bind_requires_token_for_non_loopback(monkeypatch):
+    monkeypatch.setattr(ws.settings, "access_token", "")
+    with pytest.raises(RuntimeError):
+        ws.assert_safe_bind("0.0.0.0")
+
+
+def test_assert_safe_bind_loopback_ok_without_token(monkeypatch):
+    monkeypatch.setattr(ws.settings, "access_token", "")
+    ws.assert_safe_bind("127.0.0.1")
+
+
+def test_assert_safe_bind_non_loopback_ok_with_token(monkeypatch):
+    monkeypatch.setattr(ws.settings, "access_token", "s")
+    ws.assert_safe_bind("0.0.0.0")
+
+
+def test_body_size_dependency(monkeypatch):
+    monkeypatch.setattr(ws.settings, "max_body_bytes", 10)
+    client = TestClient(app)
+    resp = client.post("/api/scan", json={"target": "x" * 100})
+    assert resp.status_code == 413
+
+
+def test_body_size_middleware_chunked():
+    from starlette.applications import Starlette
+    from starlette.responses import PlainTextResponse
+    from starlette.routing import Route
+
+    async def endpoint(request):
+        await request.body()
+        return PlainTextResponse("ok")
+
+    app2 = Starlette(routes=[Route("/", endpoint, methods=["POST"])])
+    app2.add_middleware(ws.BodySizeLimitMiddleware, max_bytes=10)
+    client = TestClient(app2)
+    resp = client.post("/", content=b"x" * 100)
+    assert resp.status_code == 413

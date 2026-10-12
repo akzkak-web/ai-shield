@@ -65,6 +65,7 @@ class PDFReport(FPDF):
             f"Duration: {result.get('duration', 0)}s",
             f"Open Ports: {len(result.get('port_data', {}).get('open_ports', []))}",
             f"AI Services: {len([s for s in result.get('port_data', {}).get('services', []) if s.get('detected')])}",
+            f"Coverage: {result.get('coverage_status', 'none')}",
         ]
         for line in info:
             self.cell(0, 8, line, 0, 1, "C")

@@ -432,26 +432,14 @@ async def check_data_leak(host, port, service, version=None, client=None) -> Che
 # Check: File Read (advisory/version based, no exploitation)
 # ============================================================
 async def check_file_access(host, port, service, version=None, client=None) -> CheckResult:
-    matches = match_advisories(service, version)
-    if not matches:
-        return CheckResult("file_access", CheckStatus.UNKNOWN, detail="no advisory data to evaluate file-read exposure")
-    for adv, status in matches:
-        if status == "affected":
-            f = _finding(
-                "file_access", "FILE-001", adv.severity, "confirmed",
-                "版本可能受已知任意文件读取漏洞影响",
-                "Version affected by a known arbitrary-file-read advisory",
-                f"根据 {adv.id}（来源：{adv.source}），当前版本处于受影响范围。",
-                f"According to {adv.id} (source: {adv.source}), the detected version is in the affected range.",
-                f"advisory={adv.id} affected={list(adv.affected)} fixed={adv.fixed} url={adv.url}",
-                f"升级到 >= {adv.fixed}。详见 {adv.url}",
-                f"Upgrade to >= {adv.fixed}. See {adv.url}",
-                port, service,
-            )
-            return CheckResult("file_access", CheckStatus.FAIL, [f], detail=f"affected by {adv.id}")
-        if status == "not_affected":
-            return CheckResult("file_access", CheckStatus.PASS, detail=f"not affected per {adv.id}")
-    return CheckResult("file_access", CheckStatus.UNKNOWN, detail="version unknown; file-read exposure unverified")
+    # Active file-read probing is intentionally not performed (it would send
+    # path-traversal / arbitrary-read payloads). Known file-read advisories
+    # are reported once by the cve_check to avoid duplicate findings.
+    return CheckResult(
+        "file_access",
+        CheckStatus.UNKNOWN,
+        detail="active file-read probing disabled; known path-traversal advisories are reported by cve_check",
+    )
 
 
 # ============================================================

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import hmac
+import ipaddress
 import logging
 import os
 import sys
@@ -39,6 +40,71 @@ from core.target_policy import TargetPolicyError, validate_target
 logger = logging.getLogger("ai-shield.web")
 
 app = FastAPI(title="AI Shield", version="1.1.0")
+
+
+def assert_safe_bind(host: str) -> None:
+    """Refuse to bind to a non-loopback address without authentication."""
+    try:
+        is_loopback = ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        is_loopback = False
+    if not is_loopback and not settings.access_token:
+        raise RuntimeError(
+            "refusing to bind to a non-loopback address without "
+            "AI_SHIELD_ACCESS_TOKEN; set an access token or bind to 127.0.0.1"
+        )
+
+
+class BodySizeLimitMiddleware:
+    """Reject request bodies larger than ``max_bytes`` (including chunked)."""
+
+    def __init__(self, app, max_bytes: int):
+        self.app = app
+        self.max_bytes = max_bytes
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        # Fast path: reject via Content-Length before reading the body.
+        headers = {k.decode("latin-1"): v.decode("latin-1") for k, v in scope.get("headers", [])}
+        content_length = headers.get("content-length")
+        if content_length and content_length.isdigit() and int(content_length) > self.max_bytes:
+            response = JSONResponse({"detail": "request body too large"}, status_code=413)
+            await response(scope, receive, send)
+            return
+
+        # Buffer the body to enforce the limit for chunked/unknown length.
+        chunks = []
+        total = 0
+        while True:
+            message = await receive()
+            if message["type"] != "http.request":
+                break
+            chunk = message.get("body", b"")
+            chunks.append(chunk)
+            total += len(chunk)
+            if total > self.max_bytes:
+                response = JSONResponse({"detail": "request body too large"}, status_code=413)
+                await response(scope, receive, send)
+                return
+            if not message.get("more_body", False):
+                break
+
+        body = b"".join(chunks)
+        sent = [False]
+
+        async def replay_receive():
+            if not sent[0]:
+                sent[0] = True
+                return {"type": "http.request", "body": body, "more_body": False}
+            return {"type": "http.disconnect"}
+
+        await self.app(scope, replay_receive, send)
+
+
+app.add_middleware(BodySizeLimitMiddleware, max_bytes=settings.max_body_bytes)
 
 # CORS is opt-in. No origins -> no cross-origin access.
 if settings.cors_origins:
@@ -175,4 +241,5 @@ async def start_scan(req: ScanRequest):
 if __name__ == "__main__":
     import uvicorn
 
+    assert_safe_bind(settings.host)
     uvicorn.run(app, host=settings.host, port=settings.port)

@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from core.config import DEFAULT_PORTS
+from core.config import DEFAULT_PORTS, settings
 from core.rating import compute_grade
 from core.target_policy import TargetDecision, validate_target
 from checks import ALL_CHECKS, Finding
@@ -41,6 +41,18 @@ def _sanitize(text: str) -> str:
     return out
 
 
+_STATUS_PRIORITY = {"pass": 0, "warn": 1, "fail": 2, "unknown": 3, "error": 4}
+
+
+def _worst_status(current: Optional[str], new: str) -> str:
+    """Keep the more severe of two check statuses across services."""
+    if current is None:
+        return new
+    if _STATUS_PRIORITY.get(current, 0) >= _STATUS_PRIORITY.get(new, 0):
+        return current
+    return new
+
+
 class ScanResult:
     """Holds the complete result of a scan."""
 
@@ -56,15 +68,20 @@ class ScanResult:
         self.grade = "N/A"
         self.risk_score = 0
         self.grade_reasons: List[str] = []
+        self.coverage: dict = {}
+        self.coverage_status: str = "none"
+        self.notes: List[str] = []
 
     def calculate_grade(self):
-        grade, score, reasons = compute_grade(
+        grade, score, reasons, cov = compute_grade(
             [f.to_dict() for f in self.findings],
             self.check_results,
         )
         self.grade = grade
         self.risk_score = score
         self.grade_reasons = reasons
+        self.coverage = cov["coverage"]
+        self.coverage_status = cov["coverage_status"]
 
     def to_dict(self) -> dict:
         return {
@@ -76,6 +93,9 @@ class ScanResult:
             "grade": self.grade,
             "risk_score": self.risk_score,
             "grade_reasons": self.grade_reasons,
+            "coverage": self.coverage,
+            "coverage_status": self.coverage_status,
+            "notes": self.notes,
             "port_data": self.port_data,
             "findings": [f.to_dict() for f in self.findings],
             "check_results": self.check_results,
@@ -157,40 +177,52 @@ class Scanner:
 
         ai_services = [s for s in result.port_data.get("services", []) if s.get("detected")]
         if not ai_services:
-            ai_services = [
-                s
-                for s in result.port_data.get("services", [])
-                if s["port"] in result.port_data.get("open_ports", [])
-            ]
+            open_ports = result.port_data.get("open_ports", [])
+            note = "no AI services identified on scanned ports"
+            if open_ports:
+                note += f" (open ports: {open_ports})"
+            result.notes.append(note)
+            result.grade = "N/A"
+            result.risk_score = 0
+            result.grade_reasons = ["no AI services identified — nothing to scan"]
+            result.coverage = {"total": 0, "pass": 0, "fail": 0, "warn": 0, "error": 0, "unknown": 0}
+            result.coverage_status = "none"
+        else:
+            for svc in ai_services:
+                port = svc["port"]
+                service_name = svc.get("service", "Unknown")
+                version = svc.get("version")
 
-        for svc in ai_services:
-            port = svc["port"]
-            service_name = svc.get("service", "Unknown")
-            version = svc.get("version")
+                if progress_callback:
+                    await progress_callback("checks", f"Checking {service_name} on port {port}...")
 
-            if progress_callback:
-                await progress_callback("checks", f"Checking {service_name} on port {port}...")
-
-            for check_name in checks:
-                check_fn = ALL_CHECKS.get(check_name)
-                if check_fn is None:
-                    result.check_results[check_name] = "unknown"
-                    continue
-                try:
-                    check_result = await check_fn(scan_host, port, service_name, version)
-                except Exception as exc:
-                    result.check_results[check_name] = "error"
-                    logger.warning(
-                        "check %s failed on %s:%s: %s",
-                        check_name, scan_host, port, _sanitize(str(exc)),
+                for check_name in checks:
+                    check_fn = ALL_CHECKS.get(check_name)
+                    if check_fn is None:
+                        result.check_results[check_name] = _worst_status(
+                            result.check_results.get(check_name), "unknown"
+                        )
+                        continue
+                    try:
+                        check_result = await check_fn(scan_host, port, service_name, version)
+                    except Exception as exc:
+                        result.check_results[check_name] = _worst_status(
+                            result.check_results.get(check_name), "error"
+                        )
+                        logger.warning(
+                            "check %s failed on %s:%s: %s",
+                            check_name, scan_host, port, _sanitize(str(exc)),
+                        )
+                        continue
+                    result.check_results[check_name] = _worst_status(
+                        result.check_results.get(check_name), check_result.status.value
                     )
-                    continue
-                result.check_results[check_name] = check_result.status.value
-                result.findings.extend(check_result.findings)
+                    result.findings.extend(check_result.findings)
 
         result.end_time = datetime.now(timezone.utc).isoformat()
         result.duration = round(time.time() - start, 2)
-        result.calculate_grade()
+        if ai_services:
+            result.calculate_grade()
 
         result_dict = result.to_dict()
         self.history.insert(0, result_dict)
@@ -210,6 +242,16 @@ class Scanner:
         """Run scan on multiple targets (subnet/CIDR)."""
         # Validate the subnet once before expanding.
         self._resolve_target(target, allow_private=allow_private)
+        try:
+            network = ipaddress.ip_network(target, strict=False)
+            host_count = max(network.num_addresses - 2, 0)
+        except ValueError:
+            host_count = 0
+        if host_count > settings.max_subnet_hosts:
+            raise ValueError(
+                f"subnet too large: ~{host_count} hosts exceeds limit of "
+                f"{settings.max_subnet_hosts}"
+            )
         targets = self.expand_target(target)
         results = []
         for i, ip in enumerate(targets):

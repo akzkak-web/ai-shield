@@ -201,6 +201,7 @@ class Settings:
     allowed_targets: List[str] = field(default_factory=list)
     max_body_bytes: int = 64 * 1024
     max_targets: int = 256
+    max_subnet_hosts: int = 4096
     scan_timeout_seconds: float = 120.0
     rate_limit_requests: int = 20
     rate_limit_window_seconds: float = 60.0
@@ -216,6 +217,7 @@ class Settings:
             allowed_targets=_env_list("AI_SHIELD_ALLOWED_TARGETS"),
             max_body_bytes=int(os.environ.get("AI_SHIELD_MAX_BODY_BYTES", str(64 * 1024))),
             max_targets=int(os.environ.get("AI_SHIELD_MAX_TARGETS", "256")),
+            max_subnet_hosts=int(os.environ.get("AI_SHIELD_MAX_SUBNET_HOSTS", "4096")),
             scan_timeout_seconds=float(
                 os.environ.get("AI_SHIELD_SCAN_TIMEOUT_SECONDS", "120")
             ),

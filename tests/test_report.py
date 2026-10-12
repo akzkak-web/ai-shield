@@ -8,6 +8,7 @@ def test_json_report_structure():
     r.calculate_grade()
     d = r.to_dict()
     for key in ("id", "target", "grade", "risk_score", "grade_reasons",
+                "coverage", "coverage_status", "notes",
                 "findings", "check_results", "summary", "port_data"):
         assert key in d
 

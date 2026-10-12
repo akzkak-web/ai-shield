@@ -56,3 +56,20 @@ def test_hostname_resolution_and_rebinding_guard(monkeypatch):
 def test_cidr_private_requires_flag():
     assert not validate_target("192.168.1.0/24").allowed
     assert validate_target("192.168.1.0/24", allow_private=True).allowed
+
+
+def test_ipv6_loopback_allowed():
+    assert validate_target("::1").allowed
+
+
+def test_ipv4_mapped_loopback_allowed():
+    assert validate_target("::ffff:127.0.0.1").allowed
+
+
+def test_ipv4_mapped_metadata_rejected():
+    assert not validate_target("::ffff:169.254.169.254").allowed
+
+
+def test_ipv4_mapped_private_requires_flag():
+    assert not validate_target("::ffff:192.168.1.1").allowed
+    assert validate_target("::ffff:192.168.1.1", allow_private=True).allowed

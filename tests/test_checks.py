@@ -162,11 +162,39 @@ def test_cve_unknown_without_version():
     assert run(check_cve("127.0.0.1", 11434, "Ollama", None)).status == CheckStatus.UNKNOWN
 
 
-def test_file_access_affected_by_advisory():
+def test_file_access_does_not_duplicate_cve():
     res = run(check_file_access("127.0.0.1", 11434, "Ollama", "0.1.33"))
-    assert res.status == CheckStatus.FAIL
+    # file_access no longer re-reports the CVE (cve_check owns that finding).
+    assert res.status == CheckStatus.UNKNOWN
+    assert res.findings == []
 
 
 def test_file_access_unknown_for_non_ollama():
     res = run(check_file_access("127.0.0.1", 8000, "vLLM", "0.5.0"))
     assert res.status == CheckStatus.UNKNOWN
+
+
+def test_cve_reported_once_not_duplicated():
+    cve = run(check_cve("127.0.0.1", 11434, "Ollama", "0.1.33"))
+    fa = run(check_file_access("127.0.0.1", 11434, "Ollama", "0.1.33"))
+    assert len(cve.findings) == 1
+    assert len(fa.findings) == 0
+
+
+def test_check_does_not_follow_redirect():
+    def handler(request):
+        if request.method == "GET" and request.url.path == "/":
+            return httpx.Response(302, headers={"Location": "http://169.254.169.254/"})
+        return httpx.Response(404)
+
+    async def main():
+        client = make_client(handler)
+        try:
+            return await check_network_exposure("127.0.0.1", 11434, "Ollama", client=client)
+        finally:
+            await client.aclose()
+
+    # Loopback target -> PASS regardless; assert no redirect was followed by
+    # checking the result did not turn into a metadata "FAIL".
+    res = run(main())
+    assert res.status == CheckStatus.PASS

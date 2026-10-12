@@ -16,7 +16,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 def cmd_web(args):
     import uvicorn
-    from web.server import app
+    from web.server import app, assert_safe_bind
+
+    try:
+        assert_safe_bind(args.host)
+    except RuntimeError as exc:
+        print(f"❌ {exc}")
+        sys.exit(1)
 
     print(
         f"""
@@ -96,11 +102,14 @@ def cmd_scan(args):
 
     print(f"{'=' * 50}")
     print(f"  Grade: {result['grade']}  |  Risk Score: {result['risk_score']}/100")
+    print(f"  Coverage: {result.get('coverage_status', 'none')}")
     print(f"  Duration: {result['duration']}s")
     print(f"{'=' * 50}\n")
 
     for reason in result.get("grade_reasons", []):
         print(f"  📋 {reason}")
+    for note in result.get("notes", []):
+        print(f"  ℹ️  {note}")
     print()
 
     cr = result.get("check_results", {})
