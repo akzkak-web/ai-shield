@@ -93,6 +93,15 @@ class PDFReport(FPDF):
             self.cell(0, 8, f"{severity.upper()}: {count}", 0, 1, "L")
         self.set_text_color(0, 0, 0)
 
+        reasons = result.get("grade_reasons", [])
+        if reasons:
+            self.ln(4)
+            self.set_font("Helvetica", "B", 11)
+            self.cell(0, 8, "Why this grade:", 0, 1, "L")
+            self.set_font("Helvetica", "", 10)
+            for reason in reasons:
+                self.cell(0, 6, f"- {reason}", 0, 1, "L")
+
     def add_finding_detail(self, finding: Dict, index: int):
         """Add detailed finding page."""
         self.add_page()
@@ -119,6 +128,11 @@ class PDFReport(FPDF):
         self.cell(30, 8, severity, 0, 0, "L", fill=True)
         self.set_text_color(0, 0, 0)
         self.ln(5)
+
+        confidence = finding.get("confidence", "confirmed")
+        self.set_font("Helvetica", "I", 9)
+        self.cell(0, 6, f"Confidence: {confidence}", 0, 1, "L")
+        self.set_font("Helvetica", "", 10)
 
         # Service info
         self.set_font("Helvetica", "", 10)

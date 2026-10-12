@@ -102,33 +102,30 @@ async def identify_service(host: str, port: int) -> Optional[dict]:
             timeout=5.0,
             follow_redirects=False,
         ) as client:
-            # Check main endpoint
+            resp = None
             try:
                 resp = await client.get(fp["check_path"])
+            except Exception:
+                resp = None
+
+            if resp is not None:
+                result["response_headers"] = dict(resp.headers)
                 if fp["indicator"] in resp.text.lower():
                     result["detected"] = True
-                    result["response_headers"] = dict(resp.headers)
-            except Exception:
-                pass
 
-            # Try to get version
-            if fp.get("version_path"):
+            # Only fetch version once a service has actually been detected.
+            if result["detected"] and fp.get("version_path"):
                 try:
-                    resp = await client.get(fp["version_path"])
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        if fp.get("version_key"):
-                            result["version"] = data.get(fp["version_key"])
-                        elif "version" in data:
-                            result["version"] = data.get("version")
+                    vr = await client.get(fp["version_path"])
+                    if vr.status_code == 200:
+                        data = vr.json()
+                        if isinstance(data, dict):
+                            if fp.get("version_key"):
+                                result["version"] = data.get(fp["version_key"])
+                            elif "version" in data:
+                                result["version"] = data.get("version")
                 except Exception:
                     pass
-
-            # Check bind address by looking at server header or trying external access
-            server = resp.headers.get("server", "") if resp else ""
-            if server:
-                result["response_headers"]["server"] = server
-
     except Exception:
         pass
 

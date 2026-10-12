@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================
 # AI Shield - One-Click Installer
-# Usage: curl -sL https://raw.githubusercontent.com/USER/ai-shield/main/install.sh | bash
+# Usage: curl -sL https://raw.githubusercontent.com/akzkak-web/ai-shield/main/install.sh | bash
 # ============================================================
 set -e
 
@@ -72,7 +72,7 @@ install() {
             git clone --depth 1 "$REPO_URL" "$INSTALL_DIR/src" 2>/dev/null || {
                 warn "Git clone failed. Trying alternative..."
                 # Fallback: download tarball
-                curl -sL "https://github.com/USER/ai-shield/archive/refs/heads/main.tar.gz" | tar xz -C "$INSTALL_DIR"
+                curl -sL "https://github.com/akzkak-web/ai-shield/archive/refs/heads/main.tar.gz" | tar xz -C "$INSTALL_DIR"
                 mv "$INSTALL_DIR/ai-shield-main" "$INSTALL_DIR/src"
             }
             SOURCE_DIR="$INSTALL_DIR/src"

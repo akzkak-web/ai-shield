@@ -162,3 +162,70 @@ I18N = {
 def t(key: str, lang: str = "zh") -> str:
     """Get translated string."""
     return I18N.get(lang, I18N["zh"]).get(key, key)
+
+
+# ============================================================
+# Runtime settings (environment-driven, default-deny)
+# ============================================================
+import os
+from dataclasses import dataclass, field
+from typing import List
+
+
+def _env_flag(name: str, default: bool = False) -> bool:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_list(name: str) -> List[str]:
+    raw = os.environ.get(name, "")
+    return [x.strip() for x in raw.split(",") if x.strip()]
+
+
+@dataclass
+class Settings:
+    """Security-relevant runtime settings.
+
+    Everything is opt-in. Defaults keep the tool bound to loopback with no
+    CORS origins and no cross-origin access token requirement disabled
+    (local-only usage does not need a token).
+    """
+
+    host: str = "127.0.0.1"
+    port: int = 8899
+    access_token: str = ""
+    cors_origins: List[str] = field(default_factory=list)
+    allow_private: bool = False
+    allowed_targets: List[str] = field(default_factory=list)
+    max_body_bytes: int = 64 * 1024
+    max_targets: int = 256
+    scan_timeout_seconds: float = 120.0
+    rate_limit_requests: int = 20
+    rate_limit_window_seconds: float = 60.0
+
+    @classmethod
+    def from_env(cls) -> "Settings":
+        return cls(
+            host=os.environ.get("AI_SHIELD_HOST", "127.0.0.1"),
+            port=int(os.environ.get("AI_SHIELD_PORT", "8899")),
+            access_token=os.environ.get("AI_SHIELD_ACCESS_TOKEN", ""),
+            cors_origins=_env_list("AI_SHIELD_CORS_ORIGINS"),
+            allow_private=_env_flag("AI_SHIELD_ALLOW_PRIVATE"),
+            allowed_targets=_env_list("AI_SHIELD_ALLOWED_TARGETS"),
+            max_body_bytes=int(os.environ.get("AI_SHIELD_MAX_BODY_BYTES", str(64 * 1024))),
+            max_targets=int(os.environ.get("AI_SHIELD_MAX_TARGETS", "256")),
+            scan_timeout_seconds=float(
+                os.environ.get("AI_SHIELD_SCAN_TIMEOUT_SECONDS", "120")
+            ),
+            rate_limit_requests=int(
+                os.environ.get("AI_SHIELD_RATE_LIMIT_REQUESTS", "20")
+            ),
+            rate_limit_window_seconds=float(
+                os.environ.get("AI_SHIELD_RATE_LIMIT_WINDOW_SECONDS", "60")
+            ),
+        )
+
+
+settings = Settings.from_env()
