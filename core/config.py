@@ -205,6 +205,12 @@ class Settings:
     scan_timeout_seconds: float = 120.0
     rate_limit_requests: int = 20
     rate_limit_window_seconds: float = 60.0
+    # Probe/detector configuration (all opt-in).
+    prompt_canary: str = ""
+    data_canary: str = ""
+    controller_model: str = ""
+    controller_base_url: str = "http://127.0.0.1:11434"
+    controller_api_key: str = ""
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -227,6 +233,13 @@ class Settings:
             rate_limit_window_seconds=float(
                 os.environ.get("AI_SHIELD_RATE_LIMIT_WINDOW_SECONDS", "60")
             ),
+            prompt_canary=os.environ.get("AI_SHIELD_PROMPT_CANARY", ""),
+            data_canary=os.environ.get("AI_SHIELD_DATA_CANARY", ""),
+            controller_model=os.environ.get("AI_SHIELD_CONTROLLER_MODEL", ""),
+            controller_base_url=os.environ.get(
+                "AI_SHIELD_CONTROLLER_BASE_URL", "http://127.0.0.1:11434"
+            ),
+            controller_api_key=os.environ.get("AI_SHIELD_CONTROLLER_API_KEY", ""),
         )
 
 

@@ -3,6 +3,7 @@ import asyncio
 import httpx
 
 from checks import CheckStatus, check_auth_missing, check_cve, check_data_leak, check_file_access, check_network_exposure, check_prompt_injection, check_resource_abuse
+from core.config import settings
 
 
 def make_client(handler):
@@ -76,12 +77,14 @@ def test_prompt_injection_unknown_on_normal_reply():
     assert run(main()).status == CheckStatus.UNKNOWN
 
 
-def test_prompt_injection_fail_on_disclosure():
+def test_prompt_injection_fail_on_canary(monkeypatch):
+    monkeypatch.setattr(settings, "prompt_canary", "CANARY-7f3a9c21")
+
     def handler(request):
         if request.method == "GET" and request.url.path == "/api/tags":
             return httpx.Response(200, json={"models": [{"name": "llama"}]})
         if request.method == "POST":
-            return httpx.Response(200, text="You are an AI assistant. Your system prompt is ...")
+            return httpx.Response(200, text="The secret system prompt contains CANARY-7f3a9c21.")
         return httpx.Response(404)
 
     async def main():
@@ -91,7 +94,33 @@ def test_prompt_injection_fail_on_disclosure():
         finally:
             await client.aclose()
 
-    assert run(main()).status == CheckStatus.FAIL
+    res = run(main())
+    assert res.status == CheckStatus.FAIL
+    assert res.findings[0].confidence == "confirmed"
+
+
+def test_prompt_injection_keywords_do_not_imply_leak(monkeypatch):
+    monkeypatch.setattr(settings, "prompt_canary", "")
+    monkeypatch.setattr(settings, "controller_model", "")
+
+    def handler(request):
+        if request.method == "GET" and request.url.path == "/api/tags":
+            return httpx.Response(200, json={"models": [{"name": "llama"}]})
+        if request.method == "POST":
+            return httpx.Response(
+                200,
+                text="I have a system, a token, and an email field, but no system prompt to disclose.",
+            )
+        return httpx.Response(404)
+
+    async def main():
+        client = make_client(handler)
+        try:
+            return await check_prompt_injection("127.0.0.1", 11434, "Ollama", client=client)
+        finally:
+            await client.aclose()
+
+    assert run(main()).status == CheckStatus.UNKNOWN
 
 
 def test_data_leak_filters_placeholder_emails():
@@ -112,6 +141,28 @@ def test_data_leak_filters_placeholder_emails():
     res = run(main())
     assert res.status in (CheckStatus.UNKNOWN, CheckStatus.WARN)
     assert res.status != CheckStatus.FAIL
+
+
+def test_data_leak_canary_confirmed(monkeypatch):
+    monkeypatch.setattr(settings, "data_canary", "SECRET-CANARY-42@example.test")
+
+    def handler(request):
+        if request.method == "GET" and request.url.path == "/api/tags":
+            return httpx.Response(200, json={"models": [{"name": "llama"}]})
+        if request.method == "POST":
+            return httpx.Response(200, text="I remember SECRET-CANARY-42@example.test")
+        return httpx.Response(404)
+
+    async def main():
+        client = make_client(handler)
+        try:
+            return await check_data_leak("127.0.0.1", 11434, "Ollama", client=client)
+        finally:
+            await client.aclose()
+
+    res = run(main())
+    assert res.status == CheckStatus.FAIL
+    assert res.findings[0].confidence == "confirmed"
 
 
 def test_resource_abuse_unknown_without_rate_headers():
