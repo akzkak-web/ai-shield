@@ -159,6 +159,19 @@ def cmd_scan(args):
     return 0 if s.get("critical", 0) == 0 else 1
 
 
+def cmd_refresh(args):
+    """Fetch vulnerability intelligence from NVD + EPSS + CISA KEV."""
+    from core.config import settings
+    from core.intel import refresh_advisories
+
+    print("🔄 Fetching vulnerability intelligence (NVD + EPSS + CISA KEV)...")
+    result = asyncio.run(
+        refresh_advisories(nvd_api_key=settings.nvd_api_key or args.api_key)
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0 if result.get("saved") else 1
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="AI Shield - Local AI Security Scanner",
@@ -171,6 +184,7 @@ Examples:
   %(prog)s scan 192.168.1.0/24 --allow-private
   %(prog)s scan 10.0.0.1 -o report.json
   %(prog)s scan 10.0.0.1 -o report.pdf
+  %(prog)s refresh-intel                 Update NVD/EPSS/KEV cache
         """,
     )
 
@@ -188,12 +202,17 @@ Examples:
                              help="Allow scanning private/LAN targets")
     scan_parser.add_argument("-o", "--output", help="Save report (.json or .pdf)")
 
+    refresh_parser = subparsers.add_parser("refresh-intel", help="Fetch vulnerability intelligence")
+    refresh_parser.add_argument("--api-key", help="NVD API key (overrides AI_SHIELD_NVD_API_KEY)")
+
     args = parser.parse_args()
 
     if args.command == "web":
         cmd_web(args)
     elif args.command == "scan":
         sys.exit(cmd_scan(args))
+    elif args.command == "refresh-intel":
+        sys.exit(cmd_refresh(args))
     else:
         parser.print_help()
         sys.exit(1)

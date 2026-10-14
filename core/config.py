@@ -211,6 +211,8 @@ class Settings:
     controller_model: str = ""
     controller_base_url: str = "http://127.0.0.1:11434"
     controller_api_key: str = ""
+    intel_ttl_seconds: int = 604800
+    nvd_api_key: str = ""
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -240,6 +242,8 @@ class Settings:
                 "AI_SHIELD_CONTROLLER_BASE_URL", "http://127.0.0.1:11434"
             ),
             controller_api_key=os.environ.get("AI_SHIELD_CONTROLLER_API_KEY", ""),
+            intel_ttl_seconds=int(os.environ.get("AI_SHIELD_INTEL_TTL_SECONDS", "604800")),
+            nvd_api_key=os.environ.get("AI_SHIELD_NVD_API_KEY", ""),
         )
 
 

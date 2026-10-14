@@ -24,7 +24,7 @@ from typing import List, Optional
 
 import httpx
 
-from core.advisories import advisory_database_available, match_advisories
+from core.advisories import advisory_database_available, cache_status, match_advisories
 from core.config import settings
 from core.detection import (
     CanaryDetector,
@@ -514,29 +514,40 @@ async def check_cve(host, port, service, version=None, client=None) -> CheckResu
     if not advisory_database_available():
         return CheckResult("cve_check", CheckStatus.UNKNOWN, detail="vulnerability intelligence unavailable")
 
+    intel_status = cache_status(settings.intel_ttl_seconds)
+    stale_note = " (stale cache)" if intel_status == "stale" else ""
+
     matches = match_advisories(service, version)
     findings = []
     for adv, status in matches:
-        if status == "affected":
-            findings.append(_finding(
-                "cve_check", f"CVE-{adv.id}", adv.severity, "confirmed",
-                f"存在已知漏洞 {adv.id}",
-                f"Known vulnerability {adv.id}",
-                f"根据 {adv.source}，当前版本处于 {adv.id} 的受影响范围。",
-                f"According to {adv.source}, the detected version is in the affected range for {adv.id}.",
-                f"advisory={adv.id} affected={list(adv.affected)} fixed={adv.fixed} url={adv.url}",
-                f"升级到 >= {adv.fixed}。详见 {adv.url}",
-                f"Upgrade to >= {adv.fixed}. See {adv.url}",
-                port, service,
-            ))
+        if status != "affected":
+            continue
+        context = f"advisory={adv.cve_id} affected={list(adv.affected_versions)}"
+        if adv.fixed:
+            context += f" fixed={adv.fixed}"
+        context += f" cvss={adv.cvss_score}({adv.cvss_version})"
+        context += f" epss={adv.epss_score} kev={adv.kev_listed} url={adv.source_url}"
+        fix_zh = f"升级到 >= {adv.fixed}。详见 {adv.source_url}" if adv.fixed else f"详见 {adv.source_url}"
+        fix_en = f"Upgrade to >= {adv.fixed}. See {adv.source_url}" if adv.fixed else f"See {adv.source_url}"
+        findings.append(_finding(
+            "cve_check", f"CVE-{adv.cve_id}", adv.severity, "confirmed",
+            f"存在已知漏洞 {adv.cve_id}",
+            f"Known vulnerability {adv.cve_id}",
+            f"根据 {adv.source}，当前版本处于 {adv.cve_id} 的受影响范围。",
+            f"According to {adv.source}, the detected version is in the affected range for {adv.cve_id}.",
+            context,
+            fix_zh,
+            fix_en,
+            port, service,
+        ))
 
     if findings:
-        return CheckResult("cve_check", CheckStatus.FAIL, findings, detail=f"{len(findings)} confirmed advisory match(es)")
+        return CheckResult("cve_check", CheckStatus.FAIL, findings, detail=f"{len(findings)} confirmed advisory match(es){stale_note}")
     if not matches:
-        return CheckResult("cve_check", CheckStatus.UNKNOWN, detail="no advisory data for this service/version; version info needs verification")
+        return CheckResult("cve_check", CheckStatus.UNKNOWN, detail=f"no advisory data for this service/version; version info needs verification{stale_note}")
     if all(status == "not_affected" for _, status in matches):
-        return CheckResult("cve_check", CheckStatus.PASS, detail="no known affected version")
-    return CheckResult("cve_check", CheckStatus.UNKNOWN, detail="version unknown; vulnerability status cannot be determined")
+        return CheckResult("cve_check", CheckStatus.PASS, detail=f"no known affected version{stale_note}")
+    return CheckResult("cve_check", CheckStatus.UNKNOWN, detail=f"version unknown; vulnerability status cannot be determined{stale_note}")
 
 
 # ============================================================
