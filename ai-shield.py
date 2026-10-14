@@ -50,6 +50,32 @@ def _parse_checks(raw):
     return [c.strip() for c in raw.split(",") if c.strip()]
 
 
+def _gate(findings, threshold, coverage_status=None):
+    """Return ``(exit_code, message)`` for the fail gate.
+
+    Exit code 0 = pass (no confirmed finding at/above threshold), 1 = fail.
+    Only ``confirmed`` findings count; unknown/error/coverage never become a
+    clean pass.
+    """
+    from core.rating import SEVERITY_ORDER, confirmed_findings_above, fail_gate_triggered
+
+    threshold = threshold or "critical"
+    if fail_gate_triggered(findings, threshold):
+        above = confirmed_findings_above(findings, threshold)
+        sevs = sorted(
+            {f.get("severity", "info") for f in above},
+            key=lambda s: -SEVERITY_ORDER.get(s, 0),
+        )
+        return 1, (
+            f"🛡️  Fail gate: FAILED — {len(above)} confirmed finding(s) "
+            f"at or above '{threshold}' ({', '.join(sevs)})"
+        )
+    note = ""
+    if coverage_status and coverage_status != "full":
+        note = f" (coverage={coverage_status}; no findings is NOT a security guarantee)"
+    return 0, f"🛡️  Fail gate: PASS — no confirmed finding at or above '{threshold}'{note}"
+
+
 def cmd_scan(args):
     from core.report import generate_pdf_report
     from core.scanner import Scanner
@@ -71,11 +97,14 @@ def cmd_scan(args):
         except ValueError as exc:
             print(f"❌ 目标被拒绝: {exc}")
             return 2
+        except Exception as exc:
+            print(f"❌ 扫描失败: {type(exc).__name__}")
+            return 2
 
-        critical = sum(r.get("summary", {}).get("critical", 0) for r in results if "summary" in r)
+        total_critical = sum(r.get("summary", {}).get("critical", 0) for r in results if "summary" in r)
         print(f"{'=' * 50}")
         print(f"  Targets: {len(results)}")
-        print(f"  Critical: {critical}")
+        print(f"  Critical: {total_critical}")
         print(f"{'=' * 50}\n")
         for r in results:
             if "error" in r:
@@ -89,7 +118,14 @@ def cmd_scan(args):
             with open(args.output, "w", encoding="utf-8") as fp:
                 json.dump(results, fp, ensure_ascii=False, indent=2)
             print(f"\n📄 Report saved to {args.output}")
-        return 0 if critical == 0 else 1
+
+        all_findings = []
+        for r in results:
+            if "findings" in r:
+                all_findings.extend(r["findings"])
+        exit_code, msg = _gate(all_findings, getattr(args, "fail_on", None))
+        print(msg)
+        return exit_code
 
     print(f"\n🛡️  AI Shield - Scanning {target}...\n")
     try:
@@ -98,6 +134,9 @@ def cmd_scan(args):
         )
     except ValueError as exc:
         print(f"❌ 目标被拒绝: {exc}")
+        return 2
+    except Exception as exc:
+        print(f"❌ 扫描失败: {type(exc).__name__}")
         return 2
 
     print(f"{'=' * 50}")
@@ -156,7 +195,9 @@ def cmd_scan(args):
             print(f"📄 Report saved to {args.output}")
 
     print()
-    return 0 if s.get("critical", 0) == 0 else 1
+    exit_code, msg = _gate(findings, getattr(args, "fail_on", None), result.get("coverage_status"))
+    print(msg)
+    return exit_code
 
 
 def cmd_refresh(args):
@@ -200,6 +241,8 @@ Examples:
     scan_parser.add_argument("--checks", default="all", help="Comma-separated checks or 'all'")
     scan_parser.add_argument("--allow-private", action="store_true",
                              help="Allow scanning private/LAN targets")
+    scan_parser.add_argument("--fail-on", choices=["critical", "high", "medium", "low"],
+                             help="Exit non-zero when a confirmed finding reaches this severity (default: critical)")
     scan_parser.add_argument("-o", "--output", help="Save report (.json or .pdf)")
 
     refresh_parser = subparsers.add_parser("refresh-intel", help="Fetch vulnerability intelligence")

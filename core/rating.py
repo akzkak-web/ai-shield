@@ -106,4 +106,44 @@ def compute_grade(
     }
 
 
-__all__ = ["compute_grade", "SEVERITY_ORDER"]
+def _threshold_rank(threshold: str) -> int:
+    rank = SEVERITY_ORDER.get(str(threshold).lower())
+    if rank is None:
+        raise ValueError(f"invalid fail-on threshold: {threshold}")
+    return rank
+
+
+def fail_gate_triggered(findings, threshold: str) -> bool:
+    """True when a ``confirmed`` finding reaches the threshold severity.
+
+    ``unknown``/``error``/coverage and non-confirmed findings never trigger
+    the gate, and never silently become a clean pass.
+    """
+    rank = _threshold_rank(threshold)
+    for f in findings:
+        if str(f.get("confidence", "")).lower() != "confirmed":
+            continue
+        sev = str(f.get("severity", "info")).lower()
+        if SEVERITY_ORDER.get(sev, 0) >= rank:
+            return True
+    return False
+
+
+def confirmed_findings_above(findings, threshold: str) -> list:
+    rank = _threshold_rank(threshold)
+    out = []
+    for f in findings:
+        if str(f.get("confidence", "")).lower() != "confirmed":
+            continue
+        sev = str(f.get("severity", "info")).lower()
+        if SEVERITY_ORDER.get(sev, 0) >= rank:
+            out.append(f)
+    return out
+
+
+__all__ = [
+    "compute_grade",
+    "SEVERITY_ORDER",
+    "fail_gate_triggered",
+    "confirmed_findings_above",
+]
