@@ -76,7 +76,89 @@ def _gate(findings, threshold, coverage_status=None):
     return 0, f"🛡️  Fail gate: PASS — no confirmed finding at or above '{threshold}'{note}"
 
 
+def _print_diff(diff):
+    summary = diff.get("summary", {})
+    print("📊 Diff vs baseline:")
+    for status in ("new", "fixed", "persistent", "changed", "unknown"):
+        if summary.get(status):
+            print(f"   {status}: {summary[status]}")
+    if diff.get("version_note"):
+        print(f"   ⚠️  {diff['version_note']}")
+    for e in diff.get("entries", []):
+        sev = e.get("severity", "info").upper()
+        cid = e.get("check_id", "")
+        svc = e.get("service", "")
+        port = e.get("port", "")
+        line = f"   [{e['status']:>10}] [{sev:>8}] {cid} ({svc}:{port})"
+        if e.get("reason"):
+            line += f" — {e['reason']}"
+        print(line)
+
+
+def _compute_gate(args, result, diff):
+    """Compute the exit code from absolute and/or incremental gates."""
+    from core.baseline import new_confirmed_above
+    from core.rating import SEVERITY_ORDER
+
+    codes = []
+    fail_on = getattr(args, "fail_on", None)
+    fail_on_new = getattr(args, "fail_on_new", None)
+
+    if fail_on:
+        code, msg = _gate(
+            result.get("findings", []), fail_on, result.get("coverage_status")
+        )
+        print(msg)
+        codes.append(code)
+
+    if fail_on_new:
+        if diff is None:
+            print("⚠️  --fail-on-new requires --baseline; incremental gate not applied")
+        else:
+            above = new_confirmed_above(diff.get("entries", []), fail_on_new)
+            if above:
+                sevs = sorted(
+                    {e.get("severity", "info") for e in above},
+                    key=lambda s: -SEVERITY_ORDER.get(s, 0),
+                )
+                print(
+                    f"🛡️  New-finding gate: FAILED — {len(above)} new confirmed "
+                    f"finding(s) at or above '{fail_on_new}' ({', '.join(sevs)})"
+                )
+                codes.append(1)
+            else:
+                incomplete = any(
+                    e.get("status") == "unknown" for e in diff.get("entries", [])
+                )
+                note = (
+                    " (comparison incomplete; absence of new findings is not a guarantee)"
+                    if incomplete
+                    else ""
+                )
+                print(
+                    f"🛡️  New-finding gate: PASS — no new confirmed finding at or "
+                    f"above '{fail_on_new}'{note}"
+                )
+                codes.append(0)
+
+    if not fail_on and not fail_on_new:
+        code, msg = _gate(
+            result.get("findings", []), "critical", result.get("coverage_status")
+        )
+        print(msg)
+        codes.append(code)
+
+    return 1 if 1 in codes else 0
+
+
 def cmd_scan(args):
+    from core.baseline import (
+        BaselineError,
+        build_baseline,
+        compare_baseline,
+        load_baseline,
+        save_baseline,
+    )
     from core.report import generate_pdf_report
     from core.scanner import Scanner
 
@@ -87,6 +169,12 @@ def cmd_scan(args):
     scanner = Scanner()
 
     if "/" in target:
+        if any(
+            getattr(args, k, None)
+            for k in ("baseline", "baseline_out", "fail_on_new", "diff_json")
+        ):
+            print("❌ Baseline comparison is only supported for single-target scans, not subnets.")
+            return 2
         print(f"\n🛡️  AI Shield - Subnet Scan: {target}\n")
         try:
             results = asyncio.run(
@@ -195,9 +283,26 @@ def cmd_scan(args):
             print(f"📄 Report saved to {args.output}")
 
     print()
-    exit_code, msg = _gate(findings, getattr(args, "fail_on", None), result.get("coverage_status"))
-    print(msg)
-    return exit_code
+
+    diff = None
+    try:
+        if getattr(args, "baseline_out", None):
+            save_baseline(build_baseline(result), args.baseline_out)
+            print(f"📌 Baseline saved to {args.baseline_out}")
+
+        if getattr(args, "baseline", None):
+            baseline = load_baseline(args.baseline)
+            diff = compare_baseline(baseline, result)
+            _print_diff(diff)
+            if getattr(args, "diff_json", None):
+                with open(args.diff_json, "w", encoding="utf-8") as fp:
+                    json.dump(diff, fp, ensure_ascii=False, indent=2)
+                print(f"📄 Diff report saved to {args.diff_json}")
+    except BaselineError as exc:
+        print(f"❌ Baseline error: {exc}")
+        return 2
+
+    return _compute_gate(args, result, diff)
 
 
 def cmd_refresh(args):
@@ -243,6 +348,11 @@ Examples:
                              help="Allow scanning private/LAN targets")
     scan_parser.add_argument("--fail-on", choices=["critical", "high", "medium", "low"],
                              help="Exit non-zero when a confirmed finding reaches this severity (default: critical)")
+    scan_parser.add_argument("--baseline", help="Compare against a previous baseline JSON")
+    scan_parser.add_argument("--baseline-out", help="Write a new baseline JSON after scanning")
+    scan_parser.add_argument("--diff-json", help="Write the diff report to this JSON path (requires --baseline)")
+    scan_parser.add_argument("--fail-on-new", choices=["critical", "high", "medium", "low"],
+                             help="Exit non-zero when a NEW confirmed finding reaches this severity (requires --baseline)")
     scan_parser.add_argument("-o", "--output", help="Save report (.json or .pdf)")
 
     refresh_parser = subparsers.add_parser("refresh-intel", help="Fetch vulnerability intelligence")
