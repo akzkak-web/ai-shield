@@ -20,6 +20,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field, asdict
 from enum import Enum
+import json
 from typing import List, Optional
 
 import httpx
@@ -100,6 +101,29 @@ def _try_json(resp) -> Optional[dict]:
         return resp.json()
     except Exception:
         return None
+
+
+def _response_text(raw: str, endpoint: str) -> str:
+    """Extract the user-visible model answer from an Ollama/OpenAI response.
+
+    ``thinking`` is deliberately not part of the observation because it is not
+    the final answer surfaced to the caller. If the body is not valid JSON,
+    fall back to the raw text so existing plain-text test fixtures continue to
+    work.
+    """
+    try:
+        data = json.loads(raw)
+    except Exception:
+        return raw or ""
+
+    if "chat" in endpoint:
+        choices = data.get("choices") or []
+        if choices:
+            message = choices[0].get("message") or {}
+            return str(message.get("content") or "")
+        return ""
+
+    return str(data.get("response") or "")
 
 
 def _has_models(data) -> bool:
@@ -332,7 +356,7 @@ async def _probe_completion(host, port, service, prompt, client=None) -> Optiona
                         probe_id="model-completion",
                         target=f"{host}:{port}",
                         service=service,
-                        observation=resp.text,
+                        observation=_response_text(resp.text, url),
                         meta={"model": model or "", "endpoint": url},
                     )
             except Exception:
