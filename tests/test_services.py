@@ -1,4 +1,5 @@
 import asyncio
+import socket
 
 import httpx
 
@@ -112,3 +113,16 @@ def test_identify_service_returns_none_on_connection_error(monkeypatch):
 
     result = asyncio.run(detector_mod.identify_service("127.0.0.1", 56789))
     assert result is None
+
+
+def test_scan_ports_closed_port_returns_no_open_ports():
+    s = socket.socket()
+    s.bind(("127.0.0.1", 0))
+    port = s.getsockname()[1]
+    s.close()
+
+    result = asyncio.run(detector_mod.scan_ports("127.0.0.1", [port], timeout=1.0))
+
+    assert result["host"] == "127.0.0.1"
+    assert result["open_ports"] == []
+    assert result["services"] == []

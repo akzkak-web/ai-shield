@@ -3,7 +3,7 @@ import asyncio
 import httpx
 
 import checks
-from checks import CheckStatus, check_auth_missing, check_cve, check_data_leak, check_file_access, check_network_exposure, check_prompt_injection, check_resource_abuse
+from checks import CheckStatus, check_auth_missing, check_cors, check_cve, check_data_leak, check_file_access, check_model_access, check_network_exposure, check_prompt_injection, check_resource_abuse
 from core.config import settings
 
 
@@ -46,6 +46,20 @@ def test_auth_missing_confirmed():
 def test_auth_missing_has_auth():
     def handler(request):
         return httpx.Response(401)
+
+    async def main():
+        client = make_client(handler)
+        try:
+            return await check_auth_missing("127.0.0.1", 11434, "Ollama", client=client)
+        finally:
+            await client.aclose()
+
+    assert run(main()).status == CheckStatus.PASS
+
+
+def test_auth_missing_403_is_pass():
+    def handler(request):
+        return httpx.Response(403)
 
     async def main():
         client = make_client(handler)
@@ -450,3 +464,126 @@ def test_prompt_injection_refusal_is_unknown_not_pass(monkeypatch):
     res = run(main())
     assert res.status == CheckStatus.UNKNOWN
     assert res.findings == []
+
+
+def test_model_access_unauthenticated_nonempty_list_is_fail():
+    def handler(request):
+        if request.url.path == "/api/tags":
+            return httpx.Response(200, json={"models": [{"name": "llama"}]})
+        return httpx.Response(404)
+
+    async def main():
+        client = make_client(handler)
+        try:
+            return await check_model_access("127.0.0.1", 11434, "Ollama", client=client)
+        finally:
+            await client.aclose()
+
+    res = run(main())
+    assert res.status == CheckStatus.FAIL
+    assert res.findings[0].check_id == "MODEL-001"
+
+
+def test_model_access_requires_auth_is_pass():
+    def handler(request):
+        return httpx.Response(401)
+
+    async def main():
+        client = make_client(handler)
+        try:
+            return await check_model_access("127.0.0.1", 11434, "Ollama", client=client)
+        finally:
+            await client.aclose()
+
+    assert run(main()).status == CheckStatus.PASS
+
+
+def test_model_access_403_is_pass():
+    def handler(request):
+        return httpx.Response(403)
+
+    async def main():
+        client = make_client(handler)
+        try:
+            return await check_model_access("127.0.0.1", 11434, "Ollama", client=client)
+        finally:
+            await client.aclose()
+
+    assert run(main()).status == CheckStatus.PASS
+
+
+def test_model_access_empty_models_is_unknown():
+    def handler(request):
+        return httpx.Response(200, json={"models": []})
+
+    async def main():
+        client = make_client(handler)
+        try:
+            return await check_model_access("127.0.0.1", 11434, "Ollama", client=client)
+        finally:
+            await client.aclose()
+
+    assert run(main()).status == CheckStatus.UNKNOWN
+
+
+def test_cors_wildcard_is_fail():
+    def handler(request):
+        return httpx.Response(200, headers={"access-control-allow-origin": "*"})
+
+    async def main():
+        client = make_client(handler)
+        try:
+            return await check_cors("127.0.0.1", 11434, "Ollama", client=client)
+        finally:
+            await client.aclose()
+
+    res = run(main())
+    assert res.status == CheckStatus.FAIL
+    assert res.findings[0].check_id == "CORS-001"
+
+
+def test_cors_no_header_is_pass():
+    def handler(request):
+        return httpx.Response(200)
+
+    async def main():
+        client = make_client(handler)
+        try:
+            return await check_cors("127.0.0.1", 11434, "Ollama", client=client)
+        finally:
+            await client.aclose()
+
+    assert run(main()).status == CheckStatus.PASS
+
+
+def test_cors_reflects_origin_is_fail():
+    def handler(request):
+        return httpx.Response(
+            200,
+            headers={"access-control-allow-origin": "https://evil.example.com"},
+        )
+
+    async def main():
+        client = make_client(handler)
+        try:
+            return await check_cors("127.0.0.1", 11434, "Ollama", client=client)
+        finally:
+            await client.aclose()
+
+    res = run(main())
+    assert res.status == CheckStatus.FAIL
+    assert res.findings[0].check_id == "CORS-002"
+
+
+def test_auth_missing_500_is_unknown():
+    def handler(request):
+        return httpx.Response(500)
+
+    async def main():
+        client = make_client(handler)
+        try:
+            return await check_auth_missing("127.0.0.1", 11434, "Ollama", client=client)
+        finally:
+            await client.aclose()
+
+    assert run(main()).status == CheckStatus.UNKNOWN
