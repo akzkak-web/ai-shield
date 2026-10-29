@@ -21,7 +21,7 @@ from typing import List, Optional
 from core.rating import SEVERITY_ORDER
 
 
-SCANNER_VERSION = "1.2.0"
+SCANNER_VERSION = "0.1.0-rc.1"
 BASELINE_SCHEMA_VERSION = 2
 
 
