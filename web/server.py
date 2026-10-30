@@ -39,7 +39,7 @@ from core.target_policy import TargetPolicyError, validate_target
 
 logger = logging.getLogger("ai-shield.web")
 
-app = FastAPI(title="AI Shield", version="1.1.0")
+app = FastAPI(title="AI Shield", version="0.1.0-rc.1")
 
 
 def assert_safe_bind(host: str) -> None:
@@ -168,7 +168,7 @@ async def index():
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "version": "1.1.0"}
+    return {"status": "ok", "version": "0.1.0-rc.1"}
 
 
 @app.get("/api/i18n/{lang}")

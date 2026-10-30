@@ -13,7 +13,7 @@ NC='\033[0m'
 
 INSTALL_DIR="${HOME}/.ai-shield"
 REPO_URL="https://github.com/akzkak-web/ai-shield.git"
-VERSION="1.0.0"
+VERSION="0.1.0-rc.1"
 
 banner() {
     echo ""

@@ -91,6 +91,12 @@ def _run_cli(*args):
     )
 
 
+def test_cli_version_outputs_project_version():
+    proc = _run_cli("--version")
+    assert proc.returncode == 0
+    assert proc.stdout.strip() == "0.1.0-rc.1"
+
+
 def test_cli_target_rejected_exit_2():
     proc = _run_cli("scan", "8.8.8.8")
     assert proc.returncode == 2

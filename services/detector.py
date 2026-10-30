@@ -14,6 +14,7 @@ SERVICE_FINGERPRINTS = {
         "check_path": "/api/tags",
         "method": "GET",
         "indicator": "models",
+        "json_key": "models",
         "version_path": "/api/version",
         "version_key": "version",
     },
@@ -22,6 +23,7 @@ SERVICE_FINGERPRINTS = {
         "check_path": "/v1/models",
         "method": "GET",
         "indicator": "data",
+        "json_key": "data",
         "version_path": "/version",
         "version_key": None,
     },
@@ -30,6 +32,7 @@ SERVICE_FINGERPRINTS = {
         "check_path": "/v1/models",
         "method": "GET",
         "indicator": "data",
+        "json_key": "data",
         "version_path": None,
         "version_key": None,
     },
@@ -38,6 +41,7 @@ SERVICE_FINGERPRINTS = {
         "check_path": "/v1/models",
         "method": "GET",
         "indicator": "data",
+        "json_key": "data",
         "version_path": None,
         "version_key": None,
     },
@@ -62,6 +66,7 @@ SERVICE_FINGERPRINTS = {
         "check_path": "/v1/models",
         "method": "GET",
         "indicator": "data",
+        "json_key": "data",
         "version_path": None,
         "version_key": None,
     },
@@ -81,55 +86,76 @@ async def check_port(host: str, port: int, timeout: float = 2.0) -> bool:
         return False
 
 
+def _response_matches(resp, candidate: dict) -> bool:
+    """Return True only when the response supports the service fingerprint.
+
+    For JSON endpoints we require the expected key at the top level instead of
+    merely searching arbitrary text. This prevents a generic page that happens
+    to contain the word ``models`` or ``data`` from being misidentified as an
+    AI service on a non-standard port.
+    """
+    json_key = candidate.get("json_key")
+    if json_key:
+        try:
+            data = resp.json()
+        except Exception:
+            return False
+        return isinstance(data, dict) and json_key in data
+    return candidate["indicator"] in resp.text.lower()
+
+
 async def identify_service(host: str, port: int) -> Optional[dict]:
     """Identify AI service running on a port."""
     fp = SERVICE_FINGERPRINTS.get(port)
-    if not fp:
-        return None
+    # Fixed-port fingerprints are authoritative for their configured port.
+    # For non-standard ports (for example Docker port mappings), fall back to
+    # content-based identification so a service is not silently reported as
+    # "Unknown" merely because it is reachable on a random local port.
+    candidates = [fp] if fp is not None else list(SERVICE_FINGERPRINTS.values())
 
-    result = {
-        "port": port,
-        "service": fp["name"],
-        "version": None,
-        "detected": False,
-        "bind_address": None,
-        "response_headers": {},
-    }
-
-    try:
-        async with httpx.AsyncClient(
-            base_url=f"http://{host}:{port}",
-            timeout=5.0,
-            follow_redirects=False,
-        ) as client:
-            resp = None
+    async with httpx.AsyncClient(
+        base_url=f"http://{host}:{port}",
+        timeout=5.0,
+        follow_redirects=False,
+    ) as client:
+        for candidate in candidates:
+            if candidate is None:
+                continue
+            result = {
+                "port": port,
+                "service": candidate["name"],
+                "version": None,
+                "detected": False,
+                "bind_address": None,
+                "response_headers": {},
+            }
             try:
-                resp = await client.get(fp["check_path"])
+                resp = await client.get(candidate["check_path"])
             except Exception:
-                resp = None
+                continue
 
-            if resp is not None:
-                result["response_headers"] = dict(resp.headers)
-                if fp["indicator"] in resp.text.lower():
-                    result["detected"] = True
+            result["response_headers"] = dict(resp.headers)
+            if not _response_matches(resp, candidate):
+                continue
+
+            result["detected"] = True
 
             # Only fetch version once a service has actually been detected.
-            if result["detected"] and fp.get("version_path"):
+            if candidate.get("version_path"):
                 try:
-                    vr = await client.get(fp["version_path"])
+                    vr = await client.get(candidate["version_path"])
                     if vr.status_code == 200:
                         data = vr.json()
                         if isinstance(data, dict):
-                            if fp.get("version_key"):
-                                result["version"] = data.get(fp["version_key"])
+                            if candidate.get("version_key"):
+                                result["version"] = data.get(candidate["version_key"])
                             elif "version" in data:
                                 result["version"] = data.get("version")
                 except Exception:
                     pass
-    except Exception:
-        pass
+            return result
 
-    return result if result["detected"] else None
+    return None
 
 
 async def scan_ports(host: str, ports: List[int], timeout: float = 2.0) -> Dict:

@@ -13,6 +13,8 @@ import sys
 # Ensure project root is in path.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from core import __version__
+
 
 def cmd_web(args):
     import uvicorn
@@ -27,7 +29,7 @@ def cmd_web(args):
     print(
         f"""
     ╔═══════════════════════════════════════╗
-    ║          🛡️  AI Shield v1.1.0         ║
+    ║       🛡️  AI Shield v0.1.0-rc.1      ║
     ║     Local AI Security Scanner         ║
     ╠═══════════════════════════════════════╣
     ║  Web UI:  http://{args.host}:{args.port}
@@ -333,6 +335,7 @@ Examples:
   %(prog)s refresh-intel                 Update NVD/EPSS/KEV cache
         """,
     )
+    parser.add_argument("--version", action="version", version=__version__)
 
     subparsers = parser.add_subparsers(dest="command")
 

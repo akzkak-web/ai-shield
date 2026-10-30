@@ -1,171 +1,194 @@
-# 🛡️ AI Shield
+# AI Shield
 
-**Local AI Security Scanner / 本地 AI 安全扫描工具**
+AI Shield is a security baseline scanner for locally deployed AI inference
+services. It discovers exposed model APIs and checks them for common
+misconfigurations, producing machine-readable JSON and human-readable PDF
+reports.
 
-[English](#english) | [中文](#中文)
+Current status: **v0.1.0-rc.1, internal candidate**. This release is intended
+for local, authorized evaluation. It is not a full penetration-testing
+platform and does not prove that a detected rule match is exploitable.
 
----
+## What it does
 
-## English
+- Discovers AI services on common ports, including non-standard local ports.
+- Checks whether model-list endpoints are reachable without authentication.
+- Checks model-list exposure and basic CORS posture.
+- Checks whether the service is listening on loopback, private, or public
+  addresses.
+- Runs opt-in canary-based probes for system-prompt disclosure and synthetic
+  data leakage.
+- Matches known CVEs for services where a version can be reliably detected.
+- Generates JSON and PDF reports with an explicit risk grade and coverage
+  status.
 
-AI Shield is a one-click security scanner designed to audit locally deployed AI services (Ollama, vLLM, LM Studio, llama.cpp, etc.) for common security misconfigurations and vulnerabilities.
+## Non-goals
 
-### Features
+- It is not an exploitation framework.
+- It does not attempt arbitrary file reads, prompt-injection jailbreaks, or
+  other active attacks.
+- It does not guarantee that a clean grade means a service is secure. A clean
+  grade with partial or no coverage is explicitly not a safety proof.
 
-- 🔍 **Auto Discovery** — Detects AI services on common ports
-- 🔓 **Auth Check** — Verifies if authentication is missing
-- 🌐 **Network Exposure** — Checks if API is externally accessible
-- 🐛 **CVE Matching** — Matches known CVEs for detected services
-- 💉 **Prompt Injection** — Tests system prompt extraction
-- 💧 **Data Leakage** — Tests for PII in model responses
-- 📁 **File Read** — Tests local file access via API
-- ⚡ **Rate Limiting** — Checks for resource abuse protection
-- 🔗 **CORS Audit** — Validates cross-origin policy
-- 🤖 **Model Access** — Checks unauthorized model listing
+## Supported services
 
-### Supported Services
+| Service | Default port | Validation status |
+|---|---|---|
+| Ollama | 11434 | Verified against a real local Ollama service |
+| vLLM | 8000 | Implemented; not verified with a real service |
+| llama.cpp / LocalAI | 8080 | Implemented; not verified with a real service |
+| LM Studio | 1234 | Implemented; not verified with a real service |
+| Open WebUI | 3000 | Implemented; not verified with a real service |
+| Text-Generation-WebUI | 7860 | Implemented; not verified with a real service |
+| LocalAI | 5000 | Implemented; not verified with a real service |
 
-| Service | Default Port |
-|---------|-------------|
-| Ollama | 11434 |
-| vLLM | 8000 |
-| llama.cpp / LocalAI | 8080 |
-| LM Studio | 1234 |
-| Open WebUI | 3000 |
-| Text-Generation-WebUI | 7860 |
+Non-standard ports are detected by response content when possible.
 
-### Quick Start
+## Checks
 
-#### One-Click Install
+| Check | What it observes |
+|---|---|
+| `network_exposure` | Whether the target is loopback, private, or public |
+| `auth_missing` | Whether `/api/tags` or `/v1/models` returns a usable model list without authentication |
+| `model_access` | Whether an unauthenticated client can list models |
+| `cors_check` | Whether CORS headers are permissive or reflect an arbitrary origin |
+| `prompt_injection` | Opt-in canary probe for system-prompt disclosure |
+| `data_leak` | Opt-in canary probe for synthetic sensitive data disclosure |
+| `file_access` | Advisory-only placeholder; no active file-read exploitation |
+| `resource_abuse` | Observes rate-limit headers and HTTP 429 responses |
+| `cve_check` | Matches known advisories when service and version are reliably identified |
 
-```bash
-curl -sL https://raw.githubusercontent.com/akzkak-web/ai-shield/main/install.sh | bash
-```
+Result semantics:
 
-#### Web UI
+| Status | Meaning |
+|---|---|
+| `pass` | The check ran and found no issue for the tested condition |
+| `fail` | The check ran and found confirmed, evidence-backed risk |
+| `unknown` | The check ran but the result could not be determined |
+| `error` | The check could not run (timeout, network failure, invalid response) |
 
-```bash
-ai-shield web
-# Open http://127.0.0.1:8899
-```
+`unknown` and `error` are never silently converted into a clean pass.
 
-#### CLI Scan
-
-```bash
-ai-shield scan 127.0.0.1
-ai-shield scan 192.168.1.100 --ports 11434,8000,8080
-ai-shield scan 10.0.0.1 -o report.json
-```
-
-### Requirements
+## Requirements
 
 - Python 3.9+
 - pip
+- A network path that can reach the Python package index during installation
 
-### Development
+Dependencies are declared in `requirements.txt`.
+
+## Install from source
 
 ```bash
 git clone https://github.com/akzkak-web/ai-shield.git
 cd ai-shield
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
-python ai-shield.py web
+python -m pip install -r requirements.txt
 ```
 
-### Security Grading
-
-| Grade | Risk Score | Meaning |
-|-------|-----------|---------|
-| A | 0-9 | Secure |
-| B | 10-24 | Minor issues |
-| C | 25-39 | Needs attention |
-| D | 40-59 | Significant risks |
-| F | 60+ | Critical vulnerabilities |
-
-### License
-
-MIT License
-
----
-
-## 中文
-
-AI Shield 是一款一键式安全扫描工具，专门用于检查本地部署的 AI 服务（Ollama、vLLM、LM Studio、llama.cpp 等）的常见安全配置问题和漏洞。
-
-### 功能特性
-
-- 🔍 **自动发现** — 检测常见端口上的 AI 服务
-- 🔓 **认证检查** — 验证是否缺少身份认证
-- 🌐 **网络暴露** — 检查 API 是否对外暴露
-- 🐛 **漏洞匹配** — 匹配已知 CVE（Ollama/vLLM 等）
-- 💉 **Prompt 注入** — 测试系统提示词是否可被提取
-- 💧 **数据泄露** — 测试模型响应中是否包含 PII
-- 📁 **文件读取** — 测试是否可通过 API 读取本地文件
-- ⚡ **速率限制** — 检查是否有资源滥用防护
-- 🔗 **CORS 审计** — 验证跨域策略配置
-- 🤖 **模型访问** — 检查未授权用户是否可列出模型
-
-### 支持的服务
-
-| 服务 | 默认端口 |
-|------|---------|
-| Ollama | 11434 |
-| vLLM | 8000 |
-| llama.cpp / LocalAI | 8080 |
-| LM Studio | 1234 |
-| Open WebUI | 3000 |
-| Text-Generation-WebUI | 7860 |
-
-### 快速开始
-
-#### 一键安装
+For development and tests:
 
 ```bash
-curl -sL https://raw.githubusercontent.com/akzkak-web/ai-shield/main/install.sh | bash
+python -m pip install -r requirements-dev.txt
 ```
 
-#### Web 界面
+An `install.sh` helper is also provided for local convenience. Review it
+before piping it to a shell.
+
+## Quick start
 
 ```bash
-ai-shield web
-# 打开 http://127.0.0.1:8899
+python ai-shield.py scan 127.0.0.1
+python ai-shield.py scan 127.0.0.1 --ports 11434,8000
+python ai-shield.py scan 127.0.0.1 --ports 11434 \
+  --checks auth_missing,model_access,cors_check,network_exposure
 ```
 
-#### 命令行扫描
+Show available options:
 
 ```bash
-ai-shield scan 127.0.0.1
-ai-shield scan 192.168.1.100 --ports 11434,8000,8080
-ai-shield scan 10.0.0.1 -o report.json
+python ai-shield.py --help
+python ai-shield.py scan --help
+python ai-shield.py --version
 ```
 
-### 环境要求
+## Reports
 
-- Python 3.9+
-- pip
-
-### 开发模式
+JSON:
 
 ```bash
-git clone https://github.com/akzkak-web/ai-shield.git
-cd ai-shield
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python ai-shield.py web
+python ai-shield.py scan 127.0.0.1 --ports 11434 -o report.json
 ```
 
-### 安全评级
+PDF:
 
-| 等级 | 风险分数 | 含义 |
-|------|---------|------|
-| A | 0-9 | 安全 |
-| B | 10-24 | 轻微问题 |
-| C | 25-39 | 需要关注 |
-| D | 40-59 | 显著风险 |
-| F | 60+ | 严重漏洞 |
+```bash
+python ai-shield.py scan 127.0.0.1 --ports 11434 -o report.pdf
+```
 
-### 许可证
+Baseline and diff:
 
-MIT License
+```bash
+python ai-shield.py scan 127.0.0.1 --ports 11434 --baseline-out baseline.json
+python ai-shield.py scan 127.0.0.1 --ports 11434 \
+  --baseline baseline.json --diff-json diff.json
+```
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| 0 | Scan completed; no confirmed finding at or above the fail-gate threshold |
+| 1 | Scan completed and a confirmed finding triggered the fail gate |
+| 2 | Usage, target, or baseline error |
+
+Use `--fail-on critical|high|medium|low` to set the absolute gate and
+`--fail-on-new` for new findings relative to a baseline.
+
+## Verification status
+
+Current non-integration tests:
+
+```text
+162 passed, 4 deselected
+```
+
+PDF tests:
+
+```text
+7 passed
+```
+
+The four integration tests require Docker and a real `ollama/ollama` image;
+they are intentionally not run in default CI and are marked as skipped when
+Docker is unavailable. Ollama end-to-end scanning has been verified on a
+loopback-bound local service.
+
+See `docs/USER_GUIDE.md` for installation, usage, detection, and evidence
+boundaries.
+
+## Known limitations
+
+- Only Ollama has been verified end-to-end with a real service.
+- Prompt-injection and data-leak checks require explicit canary
+  configuration and only produce confirmed findings on exact canary matches.
+- Indirect prompt injection is not yet testable through the current scanner
+  because no untrusted-context ingestion path exists.
+- PDF rendering uses system fonts and falls back to Unicode-capable fonts at
+  runtime; on minimal systems, PDF export may require an available CJK font.
+
+## Contributing
+
+Contributions are welcome. Keep changes small, add regression tests for
+behavior changes, and avoid weakening existing assertions.
+
+## Security reporting
+
+If you find a security issue in AI Shield itself, report it responsibly
+through the repository's private security advisory channel when available.
+Do not include live secrets, production data, or unrelated target details.
+
+## License
+
+MIT License. See `LICENSE`.
