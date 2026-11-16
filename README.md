@@ -105,6 +105,21 @@ python ai-shield.py scan 127.0.0.1 --ports 11434 \
   --checks auth_missing,model_access,cors_check,network_exposure
 ```
 
+## Commercial Quick Check (Ollama)
+
+`quick-check` is the commercial single-host mode: a fixed, read-only check
+set against Ollama with a customer/engagement-aware bilingual PDF report.
+
+```bash
+python ai-shield.py quick-check 127.0.0.1 \
+  --customer "客户名称" --engagement-id QC-2026-0001 \
+  --authorized-scope "127.0.0.1:11434" -o report.pdf
+```
+
+See [docs/quick-check/](docs/quick-check/) for the deliverable package:
+authorization template, scope confirmation, service description, quotation
+template and a sample report.
+
 Show available options:
 
 ```bash
