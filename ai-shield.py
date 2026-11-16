@@ -154,6 +154,7 @@ def _compute_gate(args, result, diff):
 
 
 def cmd_scan(args):
+    from checks import QUICK_CHECK_NAMES
     from core.baseline import (
         BaselineError,
         build_baseline,
@@ -220,7 +221,19 @@ def cmd_scan(args):
     print(f"\n🛡️  AI Shield - Scanning {target}...\n")
     try:
         result = asyncio.run(
-            scanner.run_scan(target, ports, checks, allow_private=args.allow_private)
+            scanner.run_scan(
+                target,
+                ports,
+                checks,
+                allow_private=args.allow_private,
+                customer=getattr(args, "customer", ""),
+                engagement_id=getattr(args, "engagement_id", ""),
+                authorized_scope=getattr(args, "authorized_scope", ""),
+                retest_status=getattr(args, "retest_status", "not_retested"),
+                assessment_type=getattr(
+                    args, "assessment_type", "AI Shield Security Assessment"
+                ),
+            )
         )
     except ValueError as exc:
         print(f"❌ 目标被拒绝: {exc}")
@@ -307,6 +320,23 @@ def cmd_scan(args):
     return _compute_gate(args, result, diff)
 
 
+def cmd_quick_check(args):
+    """AI Shield Quick Check: single-host, read-only Ollama assessment."""
+    from checks import QUICK_CHECK_NAMES
+
+    if "/" in args.target:
+        print("❌ Quick Check 仅支持单个已授权主机（不支持网段）")
+        return 2
+    args.checks = ",".join(QUICK_CHECK_NAMES)
+    args.ports = args.ports or "11434"
+    args.assessment_type = "AI Shield Quick Check — Ollama"
+    args.baseline = None
+    args.baseline_out = None
+    args.fail_on_new = None
+    args.diff_json = None
+    return cmd_scan(args)
+
+
 def cmd_refresh(args):
     """Fetch vulnerability intelligence from NVD + EPSS + CISA KEV."""
     from core.config import settings
@@ -330,6 +360,8 @@ Examples:
   %(prog)s scan 127.0.0.1               Scan localhost for AI services
   %(prog)s scan 192.168.1.100 --ports 11434,8000
   %(prog)s scan 192.168.1.0/24 --allow-private
+  %(prog)s quick-check 127.0.0.1 --customer "示例客户" \\
+         --engagement-id QC-2026-001 -o report.pdf
   %(prog)s scan 10.0.0.1 -o report.json
   %(prog)s scan 10.0.0.1 -o report.pdf
   %(prog)s refresh-intel                 Update NVD/EPSS/KEV cache
@@ -357,6 +389,33 @@ Examples:
     scan_parser.add_argument("--fail-on-new", choices=["critical", "high", "medium", "low"],
                              help="Exit non-zero when a NEW confirmed finding reaches this severity (requires --baseline)")
     scan_parser.add_argument("-o", "--output", help="Save report (.json or .pdf)")
+    scan_parser.add_argument("--customer", default="", help="Customer name for the report")
+    scan_parser.add_argument("--engagement-id", default="", help="Engagement ID for the report")
+    scan_parser.add_argument("--authorized-scope", default="",
+                             help="Authorized target scope statement")
+    scan_parser.add_argument("--retest-status", default="not_retested",
+                             choices=["not_retested", "retested_pass", "retested_fail",
+                                      "partial", "scheduled", "not_applicable"],
+                             help="Retest status for the report")
+
+    qc_parser = subparsers.add_parser(
+        "quick-check", help="AI Shield Quick Check (read-only Ollama assessment)"
+    )
+    qc_parser.add_argument("target", help="Authorized target IP or hostname")
+    qc_parser.add_argument("--ports", default="11434",
+                           help="Comma-separated ports (default: 11434)")
+    qc_parser.add_argument("--customer", required=True, help="Customer name")
+    qc_parser.add_argument("--engagement-id", required=True, help="Engagement ID")
+    qc_parser.add_argument("--authorized-scope", default="",
+                           help="Authorized target scope statement")
+    qc_parser.add_argument("--retest-status", default="not_retested",
+                           choices=["not_retested", "retested_pass", "retested_fail",
+                                    "partial", "scheduled", "not_applicable"])
+    qc_parser.add_argument("--allow-private", action="store_true",
+                           help="Allow scanning an explicitly authorized private/LAN target")
+    qc_parser.add_argument("--fail-on", choices=["critical", "high", "medium", "low"],
+                           help="Exit non-zero when a confirmed finding reaches this severity")
+    qc_parser.add_argument("-o", "--output", help="Save report (.json or .pdf)")
 
     refresh_parser = subparsers.add_parser("refresh-intel", help="Fetch vulnerability intelligence")
     refresh_parser.add_argument("--api-key", help="NVD API key (overrides AI_SHIELD_NVD_API_KEY)")
@@ -367,6 +426,8 @@ Examples:
         cmd_web(args)
     elif args.command == "scan":
         sys.exit(cmd_scan(args))
+    elif args.command == "quick-check":
+        sys.exit(cmd_quick_check(args))
     elif args.command == "refresh-intel":
         sys.exit(cmd_refresh(args))
     else:
