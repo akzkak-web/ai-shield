@@ -1,0 +1,66 @@
+{
+  "id": "b94206ce",
+  "target": "127.0.0.1",
+  "assessment_type": "AI Shield Quick Check — Ollama",
+  "tool_version": "0.1.0-rc.1",
+  "customer": "示例客户有限公司",
+  "engagement_id": "QC-2026-REAL-001",
+  "authorized_scope": "127.0.0.1:11434 Kali VM 隔离 Ollama（真实集成验证）",
+  "retest_status": "not_retested",
+  "start_time": "2026-11-16T02:19:07.519817+00:00",
+  "end_time": "2026-11-16T02:19:07.555467+00:00",
+  "duration": 0.04,
+  "grade": "A",
+  "risk_score": 0,
+  "grade_reasons": [
+    "worst finding severity: none",
+    "coverage: 3 check(s) could not be verified"
+  ],
+  "coverage": {
+    "total": 6,
+    "pass": 3,
+    "fail": 0,
+    "warn": 0,
+    "error": 0,
+    "unknown": 3
+  },
+  "coverage_status": "partial",
+  "notes": [],
+  "port_data": {
+    "host": "127.0.0.1",
+    "total_scanned": 1,
+    "open_ports": [
+      11434
+    ],
+    "services": [
+      {
+        "port": 11434,
+        "service": "Ollama",
+        "version": "0.40.4",
+        "detected": true,
+        "bind_address": null,
+        "response_headers": {
+          "content-type": "application/json; charset=utf-8",
+          "date": "Mon, 16 Nov 2026 02:19:07 GMT",
+          "content-length": "13"
+        }
+      }
+    ]
+  },
+  "findings": [],
+  "check_results": {
+    "network_exposure": "pass",
+    "auth_missing": "unknown",
+    "cors_check": "pass",
+    "model_access": "unknown",
+    "resource_abuse": "unknown",
+    "cve_check": "pass"
+  },
+  "summary": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "info": 0
+  }
+}
