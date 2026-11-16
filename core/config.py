@@ -213,6 +213,11 @@ class Settings:
     controller_api_key: str = ""
     intel_ttl_seconds: int = 604800
     nvd_api_key: str = ""
+    # Engagement metadata for commercial reports.
+    customer: str = ""
+    engagement_id: str = ""
+    authorized_scope: str = ""
+    retest_status: str = "not_retested"
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -244,6 +249,10 @@ class Settings:
             controller_api_key=os.environ.get("AI_SHIELD_CONTROLLER_API_KEY", ""),
             intel_ttl_seconds=int(os.environ.get("AI_SHIELD_INTEL_TTL_SECONDS", "604800")),
             nvd_api_key=os.environ.get("AI_SHIELD_NVD_API_KEY", ""),
+            customer=os.environ.get("AI_SHIELD_CUSTOMER", ""),
+            engagement_id=os.environ.get("AI_SHIELD_ENGAGEMENT_ID", ""),
+            authorized_scope=os.environ.get("AI_SHIELD_AUTHORIZED_SCOPE", ""),
+            retest_status=os.environ.get("AI_SHIELD_RETEST_STATUS", "not_retested"),
         )
 
 

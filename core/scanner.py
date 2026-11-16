@@ -19,6 +19,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from core import __version__
 from core.config import DEFAULT_PORTS, settings
 from core.rating import compute_grade
 from core.target_policy import TargetDecision, validate_target
@@ -56,9 +57,23 @@ def _worst_status(current: Optional[str], new: str) -> str:
 class ScanResult:
     """Holds the complete result of a scan."""
 
-    def __init__(self, target: str):
+    def __init__(
+        self,
+        target: str,
+        assessment_type: str = "AI Shield Security Assessment",
+        customer: str = "",
+        engagement_id: str = "",
+        authorized_scope: str = "",
+        retest_status: str = "not_retested",
+    ):
         self.id = str(uuid.uuid4())[:8]
         self.target = target
+        self.assessment_type = assessment_type
+        self.customer = customer
+        self.engagement_id = engagement_id
+        self.authorized_scope = authorized_scope
+        self.retest_status = retest_status
+        self.tool_version = __version__
         self.start_time = datetime.now(timezone.utc).isoformat()
         self.end_time: Optional[str] = None
         self.duration = 0
@@ -87,6 +102,12 @@ class ScanResult:
         return {
             "id": self.id,
             "target": self.target,
+            "assessment_type": self.assessment_type,
+            "tool_version": self.tool_version,
+            "customer": self.customer,
+            "engagement_id": self.engagement_id,
+            "authorized_scope": self.authorized_scope,
+            "retest_status": self.retest_status,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "duration": self.duration,
@@ -157,9 +178,21 @@ class Scanner:
         checks: Optional[List[str]] = None,
         progress_callback=None,
         allow_private: Optional[bool] = None,
+        customer: str = "",
+        engagement_id: str = "",
+        authorized_scope: str = "",
+        retest_status: str = "not_retested",
+        assessment_type: str = "AI Shield Security Assessment",
     ) -> dict:
         """Run a full security scan on a single target."""
-        result = ScanResult(target)
+        result = ScanResult(
+            target,
+            assessment_type=assessment_type,
+            customer=customer or settings.customer,
+            engagement_id=engagement_id or settings.engagement_id,
+            authorized_scope=authorized_scope or settings.authorized_scope,
+            retest_status=retest_status or settings.retest_status,
+        )
         start = time.time()
 
         decision = self._resolve_target(target, allow_private=allow_private)
