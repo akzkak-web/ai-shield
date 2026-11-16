@@ -1,0 +1,29 @@
+== AI Shield 真实集成验证环境信息 ==
+Mon Nov 16 02:19:21 UTC 2026
+Linux kali 7.1.5+kali-arm64 #1 SMP PREEMPT Kali 7.1.5-1kali1 (2026-07-29) aarch64 GNU/Linux
+PRETTY_NAME="Kali GNU/Linux Rolling"
+NAME="Kali GNU/Linux"
+VERSION_ID="2026.3"
+2
+               total        used        free      shared  buff/cache   available
+Mem:           5.8Gi       1.9Gi       1.7Gi        16Mi       2.3Gi       3.9Gi
+Docker version 28.5.2+dfsg4, build 9cc6dea35e9a963f281434761c656fba4ac43aed
+containerd github.com/containerd/containerd/v2 2.1.9+unknown 
+REPOSITORY      TAG       IMAGE ID       CREATED        SIZE
+ollama/ollama   latest    2ca7d8e6b3cb   4 weeks ago    4.23GB
+hello-world     latest    eb84fdc6f2a3   7 months ago   5.2kB
+ai-shield-ollama | ollama/ollama:latest | 127.0.0.1:11434->11434/tcp | Up 5 minutes
+ID=b0bc6359c4bda5974d67937260a0cd78794e634a5acfef1ea0bdce5843e65264 ImageDigest=sha256:2ca7d8e6b3cb241d34d32d2436e9bbfd94ee09685a349ca9f3a81d54e4866a84 Mounts=[]
+{"version":"0.40.4"}
+== 测试统计 ==
+pytest integration: 4 passed, 0 failed, 0 skipped, 169 deselected
+quick-check exit: 0 (grade A, coverage partial, 3 unknown)
+== 结果文件 ==
+total 92
+drwxrwxr-x  2 kail kail  4096 Nov 16 10:19 .
+drwxr-xr-x 16 kail kail  4096 Nov 16 10:14 ..
+-rw-rw-r--  1 kail kail  1165 Nov 16 10:19 environment.txt
+-rw-rw-r--  1 kail kail   601 Nov 16 10:18 integration.log
+-rw-rw-r--  1 kail kail   748 Nov 16 10:19 quickcheck_cli.log
+-rw-rw-r--  1 kail kail  1561 Nov 16 10:19 quickcheck_real.json
+-rw-rw-r--  1 kail kail 66232 Nov 16 10:19 quickcheck_real.pdf
