@@ -91,7 +91,10 @@ async def _client(client, base_url: str, timeout: float = 10.0):
         yield client
     else:
         async with httpx.AsyncClient(
-            base_url=base_url, timeout=timeout, follow_redirects=False
+            base_url=base_url,
+            timeout=timeout,
+            follow_redirects=False,
+            trust_env=False,
         ) as c:
             yield c
 
@@ -589,5 +592,23 @@ ALL_CHECKS = {
     "cve_check": check_cve,
 }
 
+# Quick Check runs a fixed, read-only check set against Ollama. Generation
+# probes (prompt injection, data leakage) are excluded: a commercial quick
+# assessment must not make the customer's model generate new content.
+QUICK_CHECK_NAMES = (
+    "network_exposure",
+    "auth_missing",
+    "cors_check",
+    "model_access",
+    "resource_abuse",
+    "cve_check",
+)
 
-__all__ = ["ALL_CHECKS", "Finding", "CheckResult", "CheckStatus"]
+
+__all__ = [
+    "ALL_CHECKS",
+    "QUICK_CHECK_NAMES",
+    "Finding",
+    "CheckResult",
+    "CheckStatus",
+]

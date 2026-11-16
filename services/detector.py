@@ -117,6 +117,7 @@ async def identify_service(host: str, port: int) -> Optional[dict]:
         base_url=f"http://{host}:{port}",
         timeout=5.0,
         follow_redirects=False,
+        trust_env=False,
     ) as client:
         for candidate in candidates:
             if candidate is None:
