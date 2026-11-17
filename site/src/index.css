@@ -1,0 +1,96 @@
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, monospace;
+
+  --color-ink-950: #080b14;
+  --color-ink-900: #0d1220;
+  --color-ink-800: #121a2b;
+  --color-ink-700: #1b2538;
+  --color-line: #1e293b;
+
+  --color-mist: #f2f5fa;
+  --color-mut: #9aa7bc;
+  --color-dim: #6b7688;
+
+  --color-brand-300: #7fb0ff;
+  --color-brand-400: #4e8dff;
+  --color-brand-500: #2e7cf6;
+  --color-brand-600: #1f5fd6;
+  --color-viol-300: #c4b5fd;
+  --color-viol-400: #a78bfa;
+  --color-viol-500: #8b5cf6;
+  --color-teal-400: #2dd4bf;
+  --color-amber-400: #fbbf24;
+  --color-rose-400: #fb7185;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-ink-950);
+  color: var(--color-mist);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(78, 141, 255, 0.35);
+}
+
+.glass {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015));
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.text-grad {
+  background: linear-gradient(92deg, #7fb0ff, #a78bfa 58%, #c4b5fd);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(120, 150, 220, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120, 150, 220, 0.055) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 35%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 35%, transparent 78%);
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+}
+
+@keyframes drift-a {
+  50% { transform: translate(36px, 28px); }
+}
+
+@keyframes drift-b {
+  50% { transform: translate(-28px, 40px); }
+}
+
+.orb-a { animation: drift-a 14s ease-in-out infinite alternate; }
+.orb-b { animation: drift-b 18s ease-in-out infinite alternate; }
+
+.hairline-top {
+  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.5), transparent);
+  height: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .orb-a, .orb-b { animation: none; }
+}

@@ -9,3 +9,5 @@ build/
 data/scan_history.json
 .env
 *.log
+node_modules/
+dist/
