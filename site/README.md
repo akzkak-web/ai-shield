@@ -3,6 +3,8 @@
 Light premium marketing website for AI Shield, a security assessment
 platform for self-hosted AI inference environments.
 
+Live site: https://akzkak-web.github.io/ai-shield/
+
 ## Stack
 
 - React 19 + TypeScript
@@ -19,8 +21,8 @@ npm install
 npm run dev
 ```
 
-Open `/en/` or `/zh/`. Visiting `/` redirects to the saved language, or
-English by default.
+Open `/ai-shield/en/` or `/ai-shield/zh/`. Visiting `/ai-shield/` redirects
+to the saved language, or English by default.
 
 ## Production build
 
@@ -35,8 +37,12 @@ The build emits three static entry points:
 - `dist/en/index.html`
 - `dist/zh/index.html`
 
-Deploy `dist/` to any static host that serves directory index files. The
-site is designed for root-domain deployment.
+The site is deployed to GitHub Pages:
+
+- URL: https://akzkak-web.github.io/ai-shield/
+- Source branch: `gh-pages`
+- Automation: `.github/workflows/deploy-site.yml` builds the site and
+  updates `gh-pages` whenever `site/**` changes on `sprint/quick-check`
 
 ## Internationalization
 
@@ -54,9 +60,10 @@ site is designed for root-domain deployment.
    (`raysmith0zero@gmail.com`), and the shared WhatsApp / Telegram number
    `+852 9765 4335`. All sales, demo and assessment CTAs use localized
    mailto subjects; WhatsApp opens with a localized prefilled message.
-2. **Site origin.** Replace `https://aishield.example` in `src/config.ts`
-   and in the canonical/hreflang tags of `index.html`, `en/index.html` and
-   `zh/index.html` with the production domain.
+2. **Site origin.** The current origin is
+   `https://akzkak-web.github.io/ai-shield`. For a custom domain, update
+   `SITE_URL` in `src/config.ts`, the canonical/hreflang tags in the three
+   HTML entries, and the Vite `base` (use `/` for a root-domain site).
 3. **Legal pages.** The in-page `#legal` section contains clearly marked
    initial drafts for Privacy Policy and Terms of Service. Have counsel
    finalize them before launch.
