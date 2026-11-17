@@ -1,7 +1,7 @@
-# AI Shield Website
+# AI Shield Website V2
 
-Marketing website for AI Shield, a security assessment platform for
-self-hosted AI inference environments.
+Light premium marketing website for AI Shield, a security assessment
+platform for self-hosted AI inference environments.
 
 ## Stack
 
@@ -19,6 +19,9 @@ npm install
 npm run dev
 ```
 
+Open `/en/` or `/zh/`. Visiting `/` redirects to the saved language, or
+English by default.
+
 ## Production build
 
 ```bash
@@ -26,29 +29,57 @@ npm run build
 npm run preview
 ```
 
-The build output is written to `dist/` and can be deployed to any static
-host (GitHub Pages, Cloudflare Pages, Netlify, object storage, etc.).
+The build emits three static entry points:
+
+- `dist/index.html` (English shell, canonical `/en/`)
+- `dist/en/index.html`
+- `dist/zh/index.html`
+
+Deploy `dist/` to any static host that serves directory index files. The
+site is designed for root-domain deployment.
+
+## Internationalization
+
+- English and Simplified Chinese dictionaries live in `src/content.ts`
+  and `src/content.zh.ts`, sharing the typed `SiteContent` interface.
+- `src/i18n/LanguageContext.tsx` handles language detection, URL routing,
+  localStorage persistence, hash preservation and localized SEO metadata.
+- Language switch: EN / 中文 in the navigation.
+- URLs: `/en/` and `/zh/`; direct access works on the static build.
 
 ## Configuration before launch
 
-1. **Contact destination.** All sales and demo CTAs point to a single
-   configurable email address defined in `src/config.ts`
-   (`CONTACT_EMAIL`). Replace `sales@aishield.example` with the real
-   address. No backend, CRM or form service is required.
-2. **Legal pages.** The footer links Privacy Policy and Terms of Service
-   to the in-page `#legal` section, which currently contains clearly marked
-   initial drafts. Have counsel finalize them before launch.
-3. **Sample report.** The report download in the Report section serves
-   `public/assets/demo-assessment-report.pdf`, generated from demonstration
-   data (labeled as such). Regenerate it from a real engagement before using
-   it in sales conversations if desired.
-4. **Localization.** All page copy lives in `src/content.ts`, ready to be
-   moved to an i18n structure for a future Chinese version.
+1. **Contact email.** Set `CONTACT_EMAIL` in `src/config.ts`. All sales,
+   demo and assessment CTAs use mailto links with a localized subject.
+2. **Site origin.** Replace `https://aishield.example` in `src/config.ts`
+   and in the canonical/hreflang tags of `index.html`, `en/index.html` and
+   `zh/index.html` with the production domain.
+3. **Legal pages.** The in-page `#legal` section contains clearly marked
+   initial drafts for Privacy Policy and Terms of Service. Have counsel
+   finalize them before launch.
+4. **Sample report.** `public/assets/demo-assessment-report.pdf` is
+   generated from demonstration data and labeled as such. Replace it from a
+   real customer engagement when appropriate.
 
-## Content integrity notes
+## Content integrity
 
-- Ollama is the only validated assessment target and is stated as such.
-- The hero console, report mockup and sample PDF are explicitly labeled as
-  demonstration data.
+- Ollama is the only assessment target with completed real-environment
+  verification and is stated as such.
+- The hero console and report preview are labeled demonstration data.
 - No customer logos, certifications, adoption counts or endorsements are
   invented.
+- Capabilities are split into verified checks and supported features.
+
+## Validation performed
+
+- `tsc --noEmit` and `vite build` pass.
+- Playwright (system Chrome) against the production preview:
+  - `/en/` and `/zh/` return 200 with correct `lang`, title and headline
+  - EN to ZH switch updates the URL, persists and survives reload
+  - `/` redirects to the persisted language
+  - hash context (`#pricing`) survives a language switch
+  - desktop 1440, tablet 768 and mobile 390 have no horizontal overflow
+  - mobile menu opens and exposes navigation links
+  - all internal anchors resolve, 8 mailto CTAs present
+  - favicon, logo assets and sample PDF return 200
+  - no console errors

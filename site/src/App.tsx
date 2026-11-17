@@ -1,5 +1,6 @@
 import { Nav } from "./components/Nav";
 import { Hero } from "./components/Hero";
+import { LanguageProvider } from "./i18n/LanguageContext";
 import {
   Capabilities,
   FAQSection,
@@ -16,7 +17,7 @@ import {
 
 export default function App() {
   return (
-    <>
+    <LanguageProvider>
       <Nav />
       <main id="top">
         <Hero />
@@ -32,6 +33,6 @@ export default function App() {
       </main>
       <Footer />
       <Legal />
-    </>
+    </LanguageProvider>
   );
 }

@@ -6,26 +6,20 @@
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, monospace;
 
-  --color-ink-950: #080b14;
-  --color-ink-900: #0d1220;
-  --color-ink-800: #121a2b;
-  --color-ink-700: #1b2538;
-  --color-line: #1e293b;
-
-  --color-mist: #f2f5fa;
-  --color-mut: #9aa7bc;
-  --color-dim: #6b7688;
-
-  --color-brand-300: #7fb0ff;
-  --color-brand-400: #4e8dff;
-  --color-brand-500: #2e7cf6;
-  --color-brand-600: #1f5fd6;
-  --color-viol-300: #c4b5fd;
-  --color-viol-400: #a78bfa;
-  --color-viol-500: #8b5cf6;
-  --color-teal-400: #2dd4bf;
-  --color-amber-400: #fbbf24;
-  --color-rose-400: #fb7185;
+  --color-canvas: #f8fafc;
+  --color-surface: #ffffff;
+  --color-soft: #eaf3ff;
+  --color-primary: #3478f6;
+  --color-primary-deep: #2563eb;
+  --color-secondary: #8b7cf6;
+  --color-heading: #172b4d;
+  --color-body: #475569;
+  --color-muted: #64748b;
+  --color-hair: #dce6f2;
+  --color-success: #16a37a;
+  --color-warning: #e6a23c;
+  --color-danger: #dc5b63;
+  --color-navy: #0e1b33;
 }
 
 html {
@@ -33,26 +27,32 @@ html {
 }
 
 body {
-  background: var(--color-ink-950);
-  color: var(--color-mist);
+  background: var(--color-canvas);
+  color: var(--color-body);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
 
-::selection {
-  background: rgba(78, 141, 255, 0.35);
+html[lang="zh-CN"] h1,
+html[lang="zh-CN"] h2 {
+  word-break: keep-all;
 }
 
-.glass {
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015));
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+::selection {
+  background: rgba(52, 120, 246, 0.18);
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-hair);
+  box-shadow:
+    0 1px 2px rgba(23, 43, 77, 0.04),
+    0 12px 32px rgba(23, 43, 77, 0.05);
 }
 
 .text-grad {
-  background: linear-gradient(92deg, #7fb0ff, #a78bfa 58%, #c4b5fd);
+  background: linear-gradient(92deg, #3478f6, #6d6af8 55%, #8b7cf6);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -60,17 +60,17 @@ body {
 
 .grid-bg {
   background-image:
-    linear-gradient(rgba(120, 150, 220, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(120, 150, 220, 0.055) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 35%, transparent 78%);
-  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 35%, transparent 78%);
+    linear-gradient(rgba(52, 120, 246, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(52, 120, 246, 0.06) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 86% 66% at 50% 0%, black 30%, transparent 76%);
+  -webkit-mask-image: radial-gradient(ellipse 86% 66% at 50% 0%, black 30%, transparent 76%);
 }
 
 .orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(90px);
+  filter: blur(80px);
   pointer-events: none;
 }
 
@@ -86,7 +86,7 @@ body {
 .orb-b { animation: drift-b 18s ease-in-out infinite alternate; }
 
 .hairline-top {
-  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.5), transparent);
+  background: linear-gradient(90deg, transparent, rgba(52, 120, 246, 0.35), transparent);
   height: 1px;
 }
 

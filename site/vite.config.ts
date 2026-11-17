@@ -4,4 +4,13 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: "index.html",
+        en: "en/index.html",
+        zh: "zh/index.html",
+      },
+    },
+  },
 });

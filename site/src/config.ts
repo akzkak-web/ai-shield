@@ -7,6 +7,9 @@
  */
 export const CONTACT_EMAIL = "sales@aishield.example";
 
+/** Public site origin used for canonical and hreflang URLs. */
+export const SITE_URL = "https://aishield.example";
+
 export const mailto = (subject: string) =>
   `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}`;
 
