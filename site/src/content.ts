@@ -157,6 +157,10 @@ export interface SiteContent {
     terms: string;
     contactNote: string;
     copyright: string;
+    whatsapp: string;
+    telegram: string;
+    chatNote: string;
+    whatsappMessage: string;
   };
   legal: {
     title: string;
@@ -449,6 +453,10 @@ const en: SiteContent = {
     terms: "Terms of Service",
     contactNote: "Assessments run on authorized targets only.",
     copyright: "© 2026 AI Shield. All rights reserved.",
+    whatsapp: "WhatsApp",
+    telegram: "Telegram",
+    chatNote: "Prefer a chat? Reach us on WhatsApp or Telegram.",
+    whatsappMessage: "Hello, I'd like to ask about an AI Shield assessment.",
   },
   legal: {
     title: "Legal",

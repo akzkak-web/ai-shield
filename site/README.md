@@ -49,8 +49,11 @@ site is designed for root-domain deployment.
 
 ## Configuration before launch
 
-1. **Contact email.** Set `CONTACT_EMAIL` in `src/config.ts`. All sales,
-   demo and assessment CTAs use mailto links with a localized subject.
+1. **Contact channels.** `src/config.ts` defines the primary sales email
+   (`sales@jiuzhanglabs.com`), secondary email
+   (`raysmith0zero@gmail.com`), and the shared WhatsApp / Telegram number
+   `+852 9765 4335`. All sales, demo and assessment CTAs use localized
+   mailto subjects; WhatsApp opens with a localized prefilled message.
 2. **Site origin.** Replace `https://aishield.example` in `src/config.ts`
    and in the canonical/hreflang tags of `index.html`, `en/index.html` and
    `zh/index.html` with the production domain.

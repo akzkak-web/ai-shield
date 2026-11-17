@@ -274,6 +274,10 @@ export const zh: SiteContent = {
     terms: "服务条款",
     contactNote: "评估仅针对已授权目标执行。",
     copyright: "© 2026 AI Shield. 保留所有权利。",
+    whatsapp: "WhatsApp",
+    telegram: "Telegram",
+    chatNote: "想直接沟通？可以通过 WhatsApp 或 Telegram 联系我们。",
+    whatsappMessage: "你好，我想咨询 AI Shield 安全评估。",
   },
   legal: {
     title: "法律信息",

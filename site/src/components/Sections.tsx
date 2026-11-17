@@ -10,11 +10,20 @@ import {
   FileText,
   GitCompareArrows,
   ListOrdered,
+  MessageCircle,
   Network,
+  Send,
   ShieldCheck,
 } from "lucide-react";
 import { BrandMark } from "./BrandMark";
-import { CONTACT_EMAIL, mailto } from "../config";
+import {
+  CONTACT_EMAIL,
+  SECONDARY_EMAIL,
+  TELEGRAM_URL,
+  WHATSAPP_DISPLAY,
+  mailto,
+  whatsappUrl,
+} from "../config";
 import { useLanguage } from "../i18n/LanguageContext";
 import type { TextPair } from "../content";
 
@@ -470,6 +479,23 @@ export function FinalCTA() {
             {c.finalCta.secondary}
           </a>
         </div>
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[13px] text-muted">
+          <span>{c.footer.chatNote}</span>
+          <a
+            href={whatsappUrl(c.footer.whatsappMessage)}
+            className="inline-flex items-center gap-1.5 font-medium text-body transition-colors hover:text-primary"
+          >
+            <MessageCircle size={14} />
+            {c.footer.whatsapp}
+          </a>
+          <a
+            href={TELEGRAM_URL}
+            className="inline-flex items-center gap-1.5 font-medium text-body transition-colors hover:text-primary"
+          >
+            <Send size={14} />
+            {c.footer.telegram}
+          </a>
+        </div>
       </div>
     </section>
   );
@@ -515,6 +541,29 @@ export function Footer() {
               <li>
                 <a href={`mailto:${CONTACT_EMAIL}`} className="transition-colors hover:text-primary">
                   {CONTACT_EMAIL}
+                </a>
+              </li>
+              <li>
+                <a href={`mailto:${SECONDARY_EMAIL}`} className="transition-colors hover:text-primary">
+                  {SECONDARY_EMAIL}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={whatsappUrl(c.footer.whatsappMessage)}
+                  className="inline-flex items-center gap-1.5 transition-colors hover:text-primary"
+                >
+                  <MessageCircle size={13} />
+                  {c.footer.whatsapp}: {WHATSAPP_DISPLAY}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={TELEGRAM_URL}
+                  className="inline-flex items-center gap-1.5 transition-colors hover:text-primary"
+                >
+                  <Send size={13} />
+                  {c.footer.telegram}: {WHATSAPP_DISPLAY}
                 </a>
               </li>
               <li>{c.footer.contactNote}</li>
