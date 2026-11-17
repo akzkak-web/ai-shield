@@ -363,7 +363,7 @@ const en: SiteContent = {
     title: "Straightforward Security Assessment Pricing",
     quick: {
       label: "AI SHIELD QUICK CHECK",
-      price: "¥399",
+      price: "$15.00",
       unit: "/ assessment",
       body: "A focused security baseline assessment for one authorized Ollama environment.",
       features: [

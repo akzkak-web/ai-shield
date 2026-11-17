@@ -188,7 +188,7 @@ export const zh: SiteContent = {
     title: "清晰直接的安全评估定价",
     quick: {
       label: "AI SHIELD 快速检查",
-      price: "¥399",
+      price: "¥99",
       unit: "/ 次",
       body: "面向单个已授权 Ollama 环境的聚焦式安全基线评估。",
       features: [
