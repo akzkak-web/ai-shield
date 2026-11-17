@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 112" width="440" height="112">
+  <defs>
+    <linearGradient id="g" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2F8CF7"/>
+      <stop offset=".55" stop-color="#3E7BF6"/>
+      <stop offset="1" stop-color="#6A5AF9"/>
+    </linearGradient>
+    <linearGradient id="swoosh" x1="8" y1="40" x2="56" y2="24" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2F8CF7"/>
+      <stop offset="1" stop-color="#8B7CF6"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(6 14) scale(1.3)">
+    <path d="M32 4.5 55 12.5v18.8c0 12.6-9.3 21.9-23 27.2C18.3 53.2 9 43.9 9 31.3V12.5L32 4.5Z" fill="#fff" stroke="url(#g)" stroke-width="3.6" stroke-linejoin="round"/>
+    <ellipse cx="32" cy="35" rx="24.5" ry="8.2" transform="rotate(-17 32 35)" fill="none" stroke="url(#swoosh)" stroke-width="2.4" stroke-linecap="round" opacity=".9"/>
+    <path d="M20.5 46 32 21.5 43.5 46" fill="none" stroke="url(#g)" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M32 33.5 33.9 39.2 39.6 41.1 33.9 43 32 48.7 30.1 43 24.4 41.1 30.1 39.2Z" fill="#6A5AF9"/>
+    <circle cx="9.4" cy="33.2" r="1.6" fill="#2F8CF7"/>
+    <circle cx="54.6" cy="24.8" r="1.6" fill="#8B7CF6"/>
+  </g>
+  <text x="104" y="58" font-family="Geist, 'SF Pro Display', -apple-system, 'Segoe UI', sans-serif" font-size="42" font-weight="700" letter-spacing="-1.2" fill="#0E1B33">AI Shield</text>
+  <text x="106" y="86" font-family="Geist, 'SF Pro Text', -apple-system, 'Segoe UI', sans-serif" font-size="16.5" letter-spacing="-.1" fill="#64748B">Secure Your AI Infrastructure</text>
+</svg>
