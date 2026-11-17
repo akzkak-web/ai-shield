@@ -309,7 +309,7 @@ export function ReportPreview() {
               })}
             </ul>
             <a
-              href="/assets/demo-assessment-report.pdf"
+              href={`${import.meta.env.BASE_URL}assets/demo-assessment-report.pdf`}
               className="mt-8 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-[15px] font-semibold text-white shadow-[0_8px_24px_rgba(52,120,246,0.3)] transition-colors hover:bg-primary-deep"
             >
               {c.report.cta}

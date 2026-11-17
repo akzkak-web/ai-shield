@@ -16,7 +16,7 @@ export const whatsappUrl = (text: string) =>
   `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
 
 /** Public site origin used for canonical and hreflang URLs. */
-export const SITE_URL = "https://aishield.example";
+export const SITE_URL = "https://akzkak-web.github.io/ai-shield";
 
 export const mailto = (subject: string) =>
   `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}`;

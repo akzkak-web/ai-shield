@@ -10,6 +10,9 @@ import { getContent, type Lang, type SiteContent } from "../content";
 import { SITE_URL } from "../config";
 
 const STORAGE_KEY = "ai-shield-lang";
+const BASE = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
 
 interface LanguageContextValue {
   lang: Lang;
@@ -20,9 +23,9 @@ interface LanguageContextValue {
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 function detectLang(): Lang {
-  const path = window.location.pathname;
-  if (path.startsWith("/zh")) return "zh";
-  if (path.startsWith("/en")) return "en";
+  const path = relativePath();
+  if (path.startsWith("zh")) return "zh";
+  if (path.startsWith("en")) return "en";
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved === "zh" || saved === "en") return saved;
@@ -32,8 +35,13 @@ function detectLang(): Lang {
   return "en";
 }
 
+function relativePath() {
+  const path = window.location.pathname;
+  return path.startsWith(BASE) ? path.slice(BASE.length) : path.replace(/^\//, "");
+}
+
 function localizedPath(lang: Lang, hash: string) {
-  return `/${lang}/${hash}`;
+  return `${BASE}${lang}/${hash}`;
 }
 
 function upsertMeta(selector: string, attr: "name" | "property", value: string, content: string) {
@@ -90,16 +98,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     updateSeo(lang);
-    const path = window.location.pathname;
-    if (!/^\/(en|zh)(\/|$)/.test(path)) {
+    if (!/^(en|zh)(\/|$)/.test(relativePath())) {
       window.history.replaceState(null, "", localizedPath(lang, window.location.hash));
     }
   }, [lang]);
 
   useEffect(() => {
     const onPopState = () => {
-      const path = window.location.pathname;
-      const next: Lang = path.startsWith("/zh") ? "zh" : "en";
+      const next: Lang = relativePath().startsWith("zh") ? "zh" : "en";
       setLangState(next);
       updateSeo(next);
     };
